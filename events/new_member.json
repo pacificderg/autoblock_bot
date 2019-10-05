@@ -1,0 +1,105 @@
+{
+    "body": "{\"update_id\": 814599912, \"message\": {\"message_id\": 32, \"from\": {\"id\": 129999974, \"is_bot\": false, \"first_name\": \"Test\", \"last_name\": \"User\", \"username\": \"testuser\", \"language_code\": \"en\"}, \"chat\": {\"id\": -1009999992388, \"title\": \"bot test\", \"type\": \"supergroup\"}, \"date\": 1569106050, \"new_chat_participant\": {\"id\": 999999402, \"is_bot\": false, \"first_name\": \"Test\", \"username\": \"testuser\"}, \"new_chat_member\": {\"id\": 999999402, \"is_bot\": false, \"first_name\": \"Test\", \"username\": \"testuser\"}, \"new_chat_members\": [{\"id\": 999999402, \"is_bot\": false, \"first_name\": \"Test\", \"username\": \"testuser\"}]}}",
+    "headers": {
+        "Accept-Encoding": "gzip, deflate",
+        "CloudFront-Forwarded-Proto": "https",
+        "CloudFront-Is-Desktop-Viewer": "true",
+        "CloudFront-Is-Mobile-Viewer": "false",
+        "CloudFront-Is-SmartTV-Viewer": "false",
+        "CloudFront-Is-Tablet-Viewer": "false",
+        "CloudFront-Viewer-Country": "NL",
+        "Content-Type": "application/json",
+        "Host": "test.execute-api.us-west-2.amazonaws.com",
+        "Via": "1.1 .cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "0lbZjDoHy9so-Hx8MJK185RP_YTI_-==",
+        "X-Amzn-Trace-Id": "Root=1-5d981787-",
+        "X-Forwarded-For": "0.0.0.0",
+        "X-Forwarded-Port": "443",
+        "X-Forwarded-Proto": "https"
+    },
+    "httpMethod": "POST",
+    "isBase64Encoded": false,
+    "multiValueHeaders": {
+        "Accept-Encoding": [
+            "gzip, deflate"
+        ],
+        "CloudFront-Forwarded-Proto": [
+            "https"
+        ],
+        "CloudFront-Is-Desktop-Viewer": [
+            "true"
+        ],
+        "CloudFront-Is-Mobile-Viewer": [
+            "false"
+        ],
+        "CloudFront-Is-SmartTV-Viewer": [
+            "false"
+        ],
+        "CloudFront-Is-Tablet-Viewer": [
+            "false"
+        ],
+        "CloudFront-Viewer-Country": [
+            "NL"
+        ],
+        "Content-Type": [
+            "application/json"
+        ],
+        "Host": [
+            "test.execute-api.us-west-2.amazonaws.com"
+        ],
+        "Via": [
+            "1.1 .cloudfront.net (CloudFront)"
+        ],
+        "X-Amz-Cf-Id": [
+            "0lbZjDoHy9so-Hx8MJK185RP_YTI_-=="
+        ],
+        "X-Amzn-Trace-Id": [
+            "Root=1-5d981787-"
+        ],
+        "X-Forwarded-For": [
+            "0.0.0.0"
+        ],
+        "X-Forwarded-Port": [
+            "443"
+        ],
+        "X-Forwarded-Proto": [
+            "https"
+        ]
+    },
+    "multiValueQueryStringParameters": null,
+    "path": "/webhook/",
+    "pathParameters": null,
+    "queryStringParameters": null,
+    "requestContext": {
+        "accountId": "999999999999",
+        "apiId": "test",
+        "domainName": "test.execute-api.us-west-2.amazonaws.com",
+        "domainPrefix": "test",
+        "extendedRequestId": "BEidLGa-=",
+        "httpMethod": "POST",
+        "identity": {
+            "accessKey": null,
+            "accountId": null,
+            "caller": null,
+            "cognitoAuthenticationProvider": null,
+            "cognitoAuthenticationType": null,
+            "cognitoIdentityId": null,
+            "cognitoIdentityPoolId": null,
+            "principalOrgId": null,
+            "sourceIp": "0.0.0.0",
+            "user": null,
+            "userAgent": null,
+            "userArn": null
+        },
+        "path": "/Prod/webhook/",
+        "protocol": "HTTP/1.1",
+        "requestId": "97eb4d08-1d8f-414f-9999-ed7d94c58045",
+        "requestTime": "05/Oct/2019:04:09:43 +0000",
+        "requestTimeEpoch": 1570248583487,
+        "resourceId": "9999",
+        "resourcePath": "/webhook",
+        "stage": "Prod"
+    },
+    "resource": "/webhook",
+    "stageVariables": null
+}

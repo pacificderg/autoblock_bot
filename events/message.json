@@ -1,0 +1,105 @@
+{
+  "body": "{\"update_id\":813299962,\n\"message\":{\"message_id\":10319,\"from\":{\"id\":169999952,\"is_bot\":false,\"first_name\":\"Test\",\"last_name\":\"User\",\"username\":\"TestUser\"},\"chat\":{\"id\":-1001999999531,\"title\":\"Test Chat\",\"type\":\"supergroup\"},\"date\":1570248583,\"text\":\"Test message\"}}",
+  "headers": {
+      "Accept-Encoding": "gzip, deflate",
+      "CloudFront-Forwarded-Proto": "https",
+      "CloudFront-Is-Desktop-Viewer": "true",
+      "CloudFront-Is-Mobile-Viewer": "false",
+      "CloudFront-Is-SmartTV-Viewer": "false",
+      "CloudFront-Is-Tablet-Viewer": "false",
+      "CloudFront-Viewer-Country": "NL",
+      "Content-Type": "application/json",
+      "Host": "test.execute-api.us-west-2.amazonaws.com",
+      "Via": "1.1 615139516999999949ebd55f3ac4f.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Id": "0lbZjDoHy9so-Hx8MJK185RP_YTI_-999999==",
+      "X-Amzn-Trace-Id": "Root=1-5d981787-e19149999973863d47aac4",
+      "X-Forwarded-For": "0.0.0.0",
+      "X-Forwarded-Port": "443",
+      "X-Forwarded-Proto": "https"
+  },
+  "httpMethod": "POST",
+  "isBase64Encoded": false,
+  "multiValueHeaders": {
+      "Accept-Encoding": [
+          "gzip, deflate"
+      ],
+      "CloudFront-Forwarded-Proto": [
+          "https"
+      ],
+      "CloudFront-Is-Desktop-Viewer": [
+          "true"
+      ],
+      "CloudFront-Is-Mobile-Viewer": [
+          "false"
+      ],
+      "CloudFront-Is-SmartTV-Viewer": [
+          "false"
+      ],
+      "CloudFront-Is-Tablet-Viewer": [
+          "false"
+      ],
+      "CloudFront-Viewer-Country": [
+          "NL"
+      ],
+      "Content-Type": [
+          "application/json"
+      ],
+      "Host": [
+          "test.execute-api.us-west-2.amazonaws.com"
+      ],
+      "Via": [
+          "1.1 6151395169999999df0949ebd55f3ac4f.cloudfront.net (CloudFront)"
+      ],
+      "X-Amz-Cf-Id": [
+          "0lbZjDoHy9so-Hx8MJK185RP_YTI_-t9999NT_yWXFTZRUCIy3yTQg=="
+      ],
+      "X-Amzn-Trace-Id": [
+          "Root=1-555555-e1914abc391f73863d47aac4"
+      ],
+      "X-Forwarded-For": [
+          "0.0.0.0"
+      ],
+      "X-Forwarded-Port": [
+          "443"
+      ],
+      "X-Forwarded-Proto": [
+          "https"
+      ]
+  },
+  "multiValueQueryStringParameters": null,
+  "path": "/webhook/",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+      "accountId": "999999999999",
+      "apiId": "test",
+      "domainName": "test.execute-api.us-west-2.amazonaws.com",
+      "domainPrefix": "test",
+      "extendedRequestId": "BEidLGa-9999=",
+      "httpMethod": "POST",
+      "identity": {
+          "accessKey": null,
+          "accountId": null,
+          "caller": null,
+          "cognitoAuthenticationProvider": null,
+          "cognitoAuthenticationType": null,
+          "cognitoIdentityId": null,
+          "cognitoIdentityPoolId": null,
+          "principalOrgId": null,
+          "sourceIp": "0.0.0.0",
+          "user": null,
+          "userAgent": null,
+          "userArn": null
+      },
+      "path": "/Prod/webhook/",
+      "protocol": "HTTP/1.1",
+      "requestId": "97eb4d08-1d8f-414f-9999-ed7d94c58045",
+      "requestTime": "05/Oct/2019:04:09:43 +0000",
+      "requestTimeEpoch": 1570248583487,
+      "resourceId": "99999",
+      "resourcePath": "/webhook",
+      "stage": "Prod"
+  },
+  "resource": "/webhook",
+  "stageVariables": null
+}

@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  autoblock bot
+
+  Telegram bot that implements a blocklist
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  AutoBlockTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: pk
+        Type: String
+
+  AutoBlockFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: autoblock_function/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AutoBlockTable
+        - AmazonSSMReadOnlyAccess
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AutoBlockTable
+          APP_CONFIG_PATH: '/autoblock_bot'
+      Events:
+        WebHook:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /webhook
+            Method: post
+
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  AutoBlockApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook/"
+  AutoBlockFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt AutoBlockFunction.Arn
+  AutoBlockFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt AutoBlockFunctionRole.Arn
+  AutoBlockTable:
+    Description: "DynamoDB table containing blocked users"
+    Value: !GetAtt AutoBlockTable.Arn
