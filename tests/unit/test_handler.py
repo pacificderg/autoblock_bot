@@ -26,6 +26,12 @@ def ssm_configuration():
     }
 
 @pytest.fixture()
+def broken_ssm_configuration():
+    return {
+        'Parameters': []
+    }
+
+@pytest.fixture()
 def banned_user_response():
     return {
         'Items': [{'pk': {'S': 'user_999999402'}, 'username': {'S': '@testuser'}}],
@@ -54,7 +60,20 @@ def mock_setup(ssm_configuration, mocker):
     app.ssm.get_parameters_by_path.return_value = ssm_configuration
 
 
+@pytest.fixture()
+def mock_bad_setup(broken_ssm_configuration, mock_setup):
+    app.ssm.get_parameters_by_path.return_value = broken_ssm_configuration
+
+
+def test_bad_ssm_config(message_event, mock_bad_setup):
+    with pytest.raises(Exception):
+        app.lambda_handler(message_event, "")
+
+    assert app.config is None
+
+
 def test_message_event(message_event, mock_setup):
+    # pylint: disable=no-member
     ret = app.lambda_handler(message_event, "")
 
     assert ret['statusCode'] == 200
@@ -63,6 +82,7 @@ def test_message_event(message_event, mock_setup):
 
 
 def test_non_banned_user(new_member_event, non_banned_user_response, mock_setup):
+    # pylint: disable=no-member
     app.dynamodb.query.return_value = non_banned_user_response
 
     ret = app.lambda_handler(new_member_event, "")
@@ -73,6 +93,7 @@ def test_non_banned_user(new_member_event, non_banned_user_response, mock_setup)
 
 
 def test_ban_user(new_member_event, banned_user_response, mock_setup):
+    # pylint: disable=no-member
     app.dynamodb.query.return_value = banned_user_response
 
     ret = app.lambda_handler(new_member_event, "")

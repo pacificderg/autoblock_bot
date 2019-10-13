@@ -1,6 +1,9 @@
 import requests, boto3, json, os
 
 
+EXPECTED_CONFIG = ['bot_key']
+
+
 # Initialize parameters for use across invocations
 dynamodb = boto3.client('dynamodb')
 ssm = boto3.client('ssm')
@@ -11,10 +14,16 @@ def load_config(ssm_parameter_path):
     params = ssm.get_parameters_by_path(Path=ssm_parameter_path)
 
     # /autoblock_bot/bot_key = SECRET_KEY => { 'bot_key': 'SECRET_KEY' }
-    global config
-    config = { item['Name'].split('/')[-1]: item['Value'] for item in params['Parameters'] }
+    parsed_config = { item['Name'].split('/')[-1]: item['Value'] for item in params['Parameters'] }
 
-    print("Loaded config", config)
+    print("Loaded config", parsed_config)
+
+    for key in EXPECTED_CONFIG:
+        if not key in parsed_config:
+            raise Exception("Expected key {} not found in config".format(key))
+
+    global config
+    config = parsed_config
 
 
 def lambda_handler(event, context):
