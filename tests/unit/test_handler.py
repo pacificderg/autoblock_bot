@@ -13,15 +13,22 @@ def new_member_event():
 
 
 @pytest.fixture()
+def command_event():
+    return json.load(open('events/command.json'))
+    
+
+@pytest.fixture()
 def ssm_configuration():
     return {
         'Parameters': [{
             'Name': '/autoblock_bot/bot_key',
-            'Type': 'String',
             'Value': 'SECRET_KEY',
-            'Version': 1,
-            'LastModifiedDate': datetime.datetime(2019, 10, 2, 19, 53, 0, 423000),
-            'ARN': 'arn:aws:ssm:us-west-2:999999999999:parameter/autoblock_bot/bot_key'
+        }, {
+            'Name': '/autoblock_bot/api_id',
+            'Value': 'API_ID'
+        }, {
+            'Name': '/autoblock_bot/api_hash',
+            'Value': 'API_HASH'
         }]
     }
 
@@ -34,19 +41,26 @@ def broken_ssm_configuration():
 @pytest.fixture()
 def banned_user_response():
     return {
-        'Items': [{'pk': {'S': 'user_999999402'}, 'username': {'S': '@testuser'}}],
-        'Count': 1,
-        'ScannedCount': 1
+        'Item': {'pk': {'S': 'user_999999402'}, 'username': {'S': '@testuser'}},
     }
 
 
 @pytest.fixture()
 def non_banned_user_response():
+    return {}
+
+
+@pytest.fixture()
+def admin_user_response():
     return {
-        'Items': [],
-        'Count': 0,
-        'ScannedCount': 0
+        'Item': {'pk': {'S': 'user_999999999'}, 'username': {'S': '@testuser'}},
     }
+
+
+@pytest.fixture()
+def non_admin_user_response():
+    return {}
+
 
 @pytest.fixture()
 def mock_setup(ssm_configuration, mocker):
@@ -54,7 +68,7 @@ def mock_setup(ssm_configuration, mocker):
     os.environ['TABLE_NAME'] = 'test_table'
 
     mocker.patch('autoblock_function.app.ssm.get_parameters_by_path')
-    mocker.patch('autoblock_function.app.dynamodb.query')
+    mocker.patch('autoblock_function.app.dynamodb.get_item')
     mocker.patch('requests.post')
 
     app.ssm.get_parameters_by_path.return_value = ssm_configuration
@@ -77,34 +91,33 @@ def test_message_event(message_event, mock_setup):
     ret = app.lambda_handler(message_event, "")
 
     assert ret['statusCode'] == 200
-    assert app.dynamodb.query.call_count == 0
+    assert app.dynamodb.get_item.call_count == 0
     assert requests.post.call_count == 0
 
 
 def test_non_banned_user(new_member_event, non_banned_user_response, mock_setup):
     # pylint: disable=no-member
-    app.dynamodb.query.return_value = non_banned_user_response
+    app.dynamodb.get_item.return_value = non_banned_user_response
 
     ret = app.lambda_handler(new_member_event, "")
     
     assert ret['statusCode'] == 200
-    assert app.dynamodb.query.call_count == 1
+    assert app.dynamodb.get_item.call_count == 1
     assert requests.post.call_count == 0
 
 
 def test_ban_user(new_member_event, banned_user_response, mock_setup):
     # pylint: disable=no-member
-    app.dynamodb.query.return_value = banned_user_response
+    app.dynamodb.get_item.return_value = banned_user_response
 
     ret = app.lambda_handler(new_member_event, "")
 
     assert ret['statusCode'] == 200
-    app.dynamodb.query.assert_called_once_with(
+    app.dynamodb.get_item.assert_called_once_with(
         TableName='test_table',
-        ExpressionAttributeValues={
-            ':pk': {'S': 'user_999999402'}
-        },
-        KeyConditionExpression='pk = :pk'
+        Key={
+            'pk': {'S': 'user_999999402'}
+        }
     )
     requests.post.assert_called_once_with(
         'https://api.telegram.org/botSECRET_KEY/kickChatMember',
@@ -113,3 +126,38 @@ def test_ban_user(new_member_event, banned_user_response, mock_setup):
             'user_id': 999999402
         }
     )
+
+
+def test_command(command_event, admin_user_response, mock_setup):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.return_value = admin_user_response
+
+    ret = app.lambda_handler(command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_called_once_with(
+        TableName='test_table',
+        Key={'pk': {'S': 'admin_99999999'}}
+    )
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'reply_to_message_id': 13,
+            'text': 'Unknown command'
+        }
+    )
+
+
+def test_command_from_non_admin(command_event, non_admin_user_response, mock_setup):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.return_value = non_admin_user_response
+
+    ret = app.lambda_handler(command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_called_once_with(
+        TableName='test_table',
+        Key={'pk': {'S': 'admin_99999999'}}
+    )
+    assert requests.post.call_count == 0
