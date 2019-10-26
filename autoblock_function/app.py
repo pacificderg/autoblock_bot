@@ -34,7 +34,7 @@ def load_client():
         load_config(os.environ['APP_CONFIG_PATH'])
 
     global client
-    client = TelegramClient('autoblock_bot', config['api_id'], config['api_hash'])
+    client = TelegramClient('/tmp/autoblock_bot', config['api_id'], config['api_hash'])
     client.start(bot_token=config['bot_key'])
 
 
@@ -83,27 +83,78 @@ def handle_new_user(chat_id, user_id, username):
 def handle_command(chat_id, from_id, message_id, text, entities):
     print('Got command: {}'.format(text))
 
+    # Handle entities: if there are any bot commands, operate on the first one.
+    command_entity = next(filter(lambda entity: entity['type'] == 'bot_command', entities), None)
+
+    if command_entity is None:
+        # Ignore
+        return
+
+    command = text[command_entity['offset']:command_entity['offset'] + command_entity['length']]
+
+    print('Parsed command: {}'.format(command))
+    
     # Check that the user who issued the command is an admin
     if not is_user_admin(from_id):
         print('Ignoring command from non-admin: {}'.format(from_id))
         return
 
-    # Handle entities: if there are any bot commands, operate on the first one.
-    command_entity = next(filter(lambda entity: entity['type'] == 'bot_command', entities), None)
-    command = None
+    if command == '/isbanned':
+        # Try to find a mention
+        mention_entity = next(filter(lambda entity: entity['type'] == 'mention', entities), None)
 
-    if command_entity is not None:
-        command = text[command_entity['offset']:command_entity['offset'] + command_entity['length']]
+        if mention_entity is None:
+            # No username provided, reply with an error message
+            payload = {
+                'chat_id': chat_id,
+                'reply_to_message_id': message_id,
+                'text': 'This command requires a username.'
+            }
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+            return
 
-    print('Parsed command: {}'.format(command))
+        username = text[mention_entity['offset']:mention_entity['offset'] + mention_entity['length']]
 
-    # Unknown command, reply as such
-    payload = {
-        'chat_id': chat_id,
-        'reply_to_message_id': message_id,
-        'text': 'Unknown command'
-    }
-    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        handle_is_user_banned_command(chat_id, message_id, username)
+    else:
+        # Unknown command, reply as such
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': 'Unknown command'
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+
+
+def handle_is_user_banned_command(chat_id, message_id, username):
+    if client is None:
+        load_client()
+
+    try:
+        info = client.get_entity(username)
+    except ValueError as e:
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': str(e)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        return
+    
+    if is_user_banned(info.id):
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': '{} ({}) is banned'.format(username, info.id)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+    else:
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': '{} ({}) is not banned'.format(username, info.id)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
 
 
 def is_user_banned(user_id):
