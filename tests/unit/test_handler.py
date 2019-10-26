@@ -15,6 +15,11 @@ def new_member_event():
 @pytest.fixture()
 def command_event():
     return json.load(open('events/command.json'))
+
+
+@pytest.fixture()
+def public_command_event():
+    return json.load(open('events/public_command.json'))
     
 
 @pytest.fixture()
@@ -147,6 +152,15 @@ def test_command(command_event, admin_user_response, mock_setup):
             'text': 'Unknown command'
         }
     )
+
+
+def test_public_command(public_command_event, mock_setup):
+    # pylint: disable=no-member
+    ret = app.lambda_handler(public_command_event, "")
+
+    assert ret['statusCode'] == 200
+    assert app.dynamodb.get_item.call_count == 0
+    assert requests.post.call_count == 0
 
 
 def test_command_from_non_admin(command_event, non_admin_user_response, mock_setup):

@@ -24,6 +24,7 @@ Resources:
       CodeUri: autoblock_function/
       Handler: app.lambda_handler
       Runtime: python3.7
+      MemorySize: 256
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AutoBlockTable

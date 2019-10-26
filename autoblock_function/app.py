@@ -47,6 +47,7 @@ def lambda_handler(event, context):
 
     if 'message' in body:
         chat_id = body['message']['chat']['id']
+        chat_type = body['message']['chat']['type']
         from_id = body['message']['from']['id']
         message_id = body['message']['message_id']
 
@@ -55,7 +56,7 @@ def lambda_handler(event, context):
             username = body['message']['new_chat_participant']['username']
             
             handle_new_user(chat_id, user_id, username)
-        elif 'text' in body['message'] and 'entities' in body['message']:
+        elif chat_type == 'private' and 'text' in body['message'] and 'entities' in body['message']:
             text = body['message']['text']
             entities = body['message']['entities']
 
