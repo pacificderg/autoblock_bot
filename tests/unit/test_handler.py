@@ -28,6 +28,16 @@ def is_banned_command_event():
 @pytest.fixture()
 def public_command_event():
     return json.load(open('events/public_command.json'))
+
+
+@pytest.fixture()
+def ban_command_event():
+    return json.load(open('events/ban_command.json'))
+
+
+@pytest.fixture()
+def unban_command_event():
+    return json.load(open('events/unban_command.json'))
     
 
 @pytest.fixture()
@@ -82,10 +92,13 @@ def mock_setup(ssm_configuration, mocker):
 
     mocker.patch('autoblock_function.app.ssm.get_parameters_by_path')
     mocker.patch('autoblock_function.app.dynamodb.get_item')
+    mocker.patch('autoblock_function.app.dynamodb.put_item')
+    mocker.patch('autoblock_function.app.dynamodb.delete_item')
     mocker.patch('requests.post')
     mocker.patch('autoblock_function.app.TelegramClient')
 
     app.ssm.get_parameters_by_path.return_value = ssm_configuration
+    app.client = None
 
 
 @pytest.fixture()
@@ -231,3 +244,161 @@ def test_command_from_non_admin(is_banned_command_event, non_admin_user_response
         Key={'pk': {'S': 'admin_99999999'}}
     )
     assert requests.post.call_count == 0
+
+
+def test_ban_command(
+    ban_command_event,
+    admin_user_response,
+    non_banned_user_response,
+    telegram_test_user_entity,
+    mocker,
+    mock_setup
+):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.side_effect = [admin_user_response, non_banned_user_response]
+    app.TelegramClient.return_value = telegram_test_user_entity
+
+    ret = app.lambda_handler(ban_command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_has_calls([
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'admin_99999999'}}
+        ),
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}}
+        )
+    ])
+    app.client.get_entity.assert_called_once_with('@test_user')
+    app.dynamodb.put_item.assert_called_once_with(
+        TableName='test_table',
+        Item={
+            'pk': {'S': 'user_{}'.format(TEST_USER_ID)},
+            'username': {'S': '@test_user'},
+        }
+    )
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'reply_to_message_id': 13,
+            'text': '@test_user ({}) has been banned'.format(TEST_USER_ID)
+        }
+    )
+
+
+def test_ban_command_banned_user(
+    ban_command_event,
+    admin_user_response,
+    banned_user_response,
+    telegram_test_user_entity,
+    mocker,
+    mock_setup
+):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.side_effect = [admin_user_response, banned_user_response]
+    app.TelegramClient.return_value = telegram_test_user_entity
+
+    ret = app.lambda_handler(ban_command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_has_calls([
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'admin_99999999'}}
+        ),
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}}
+        )
+    ])
+    app.client.get_entity.assert_called_once_with('@test_user')
+    assert app.dynamodb.put_item.call_count == 0
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'reply_to_message_id': 13,
+            'text': '@test_user ({}) is already banned'.format(TEST_USER_ID)
+        }
+    )
+
+
+def test_unban_command(
+    unban_command_event,
+    admin_user_response,
+    banned_user_response,
+    telegram_test_user_entity,
+    mocker,
+    mock_setup
+):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.side_effect = [admin_user_response, banned_user_response]
+    app.TelegramClient.return_value = telegram_test_user_entity
+
+    ret = app.lambda_handler(unban_command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_has_calls([
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'admin_99999999'}}
+        ),
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}}
+        )
+    ])
+    app.client.get_entity.assert_called_once_with('@test_user')
+    app.dynamodb.delete_item.assert_called_once_with(
+        TableName='test_table',
+        Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}}
+    )
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'reply_to_message_id': 13,
+            'text': '@test_user ({}) has been unbanned'.format(TEST_USER_ID)
+        }
+    )
+
+
+def test_unban_command_nonbanned_user(
+    unban_command_event,
+    admin_user_response,
+    non_banned_user_response,
+    telegram_test_user_entity,
+    mocker,
+    mock_setup
+):
+    # pylint: disable=no-member
+    app.dynamodb.get_item.side_effect = [admin_user_response, non_banned_user_response]
+    app.TelegramClient.return_value = telegram_test_user_entity
+
+    ret = app.lambda_handler(unban_command_event, "")
+
+    assert ret['statusCode'] == 200
+    app.dynamodb.get_item.assert_has_calls([
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'admin_99999999'}}
+        ),
+        mocker.call(
+            TableName='test_table',
+            Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}}
+        )
+    ])
+    app.client.get_entity.assert_called_once_with('@test_user')
+    assert app.dynamodb.delete_item.call_count == 0
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'reply_to_message_id': 13,
+            'text': '@test_user ({}) is not banned'.format(TEST_USER_ID)
+        }
+    )
+ 

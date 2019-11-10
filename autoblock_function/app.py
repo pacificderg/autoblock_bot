@@ -3,6 +3,7 @@ import requests, boto3, json, os
 
 
 EXPECTED_CONFIG = ['bot_key', 'api_id', 'api_hash']
+USERNAME_COMMANDS = ['/isbanned', '/ban', '/unban']
 
 
 # Initialize parameters for use across invocations
@@ -99,7 +100,7 @@ def handle_command(chat_id, from_id, message_id, text, entities):
         print('Ignoring command from non-admin: {}'.format(from_id))
         return
 
-    if command == '/isbanned':
+    if command in USERNAME_COMMANDS:
         # Try to find a mention
         mention_entity = next(filter(lambda entity: entity['type'] == 'mention', entities), None)
 
@@ -115,7 +116,12 @@ def handle_command(chat_id, from_id, message_id, text, entities):
 
         username = text[mention_entity['offset']:mention_entity['offset'] + mention_entity['length']]
 
-        handle_is_user_banned_command(chat_id, message_id, username)
+        if command == '/isbanned':
+            handle_is_user_banned_command(chat_id, message_id, username)
+        elif command == '/ban':
+            handle_ban_user_command(chat_id, message_id, username)
+        elif command == '/unban':
+            handle_unban_user_command(chat_id, message_id, username)
     else:
         # Unknown command, reply as such
         payload = {
@@ -157,6 +163,78 @@ def handle_is_user_banned_command(chat_id, message_id, username):
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
 
 
+def handle_ban_user_command(chat_id, message_id, username):
+    if client is None:
+        load_client()
+
+    try:
+        info = client.get_entity(username)
+    except ValueError as e:
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': str(e)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        return
+
+    # Check to see if user is already banned
+    if is_user_banned(info.id):
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': '{} ({}) is already banned'.format(username, info.id)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        return
+
+    ban_user(info.id, username)
+    
+    # Send a confirmation back
+    payload = {
+        'chat_id': chat_id,
+        'reply_to_message_id': message_id,
+        'text': '{} ({}) has been banned'.format(username, info.id)
+    }
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+
+
+def handle_unban_user_command(chat_id, message_id, username):
+    if client is None:
+        load_client()
+
+    try:
+        info = client.get_entity(username)
+    except ValueError as e:
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': str(e)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        return
+
+    # Check to see if user is not banned
+    if not is_user_banned(info.id):
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': '{} ({}) is not banned'.format(username, info.id)
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        return
+
+    unban_user(info.id)
+    
+    # Send a confirmation back
+    payload = {
+        'chat_id': chat_id,
+        'reply_to_message_id': message_id,
+        'text': '{} ({}) has been unbanned'.format(username, info.id)
+    }
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+
+
 def is_user_banned(user_id):
     response = dynamodb.get_item(
         TableName=os.environ['TABLE_NAME'],
@@ -173,3 +251,20 @@ def is_user_admin(user_id):
     )
 
     return 'Item' in response
+
+
+def ban_user(user_id, username):
+    dynamodb.put_item(
+        TableName=os.environ['TABLE_NAME'],
+        Item={
+            'pk': {'S': 'user_{}'.format(user_id)},
+            'username': {'S': username},
+        }
+    )
+
+
+def unban_user(user_id):
+    dynamodb.delete_item(
+        TableName=os.environ['TABLE_NAME'],
+        Key={'pk': {'S': 'user_{}'.format(user_id)}},
+    )
