@@ -67,7 +67,7 @@
       ]
   },
   "multiValueQueryStringParameters": null,
-  "path": "/webhook/",
+  "path": "/blacklist/",
   "pathParameters": null,
   "queryStringParameters": null,
   "requestContext": {

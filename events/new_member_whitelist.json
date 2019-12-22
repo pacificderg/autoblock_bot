@@ -67,7 +67,7 @@
         ]
     },
     "multiValueQueryStringParameters": null,
-    "path": "/blacklist/",
+    "path": "/whitelist/",
     "pathParameters": null,
     "queryStringParameters": null,
     "requestContext": {

@@ -1,5 +1,5 @@
 {
-  "body": "{\"update_id\": 813999319, \"message\": {\"message_id\": 13, \"from\": {\"id\": 99999999, \"is_bot\": false, \"first_name\": \"Test\", \"last_name\": \"User\", \"username\": \"test_user\", \"language_code\": \"en\"}, \"chat\": {\"id\": 99999999, \"first_name\": \"Test\", \"last_name\": \"User\", \"username\": \"test_user\", \"type\": \"private\"}, \"date\": 199999983, \"text\": \"/aaa @test_user\", \"entities\": [{\"offset\": 0, \"length\": 4, \"type\": \"bot_command\"}, {\"offset\": 5, \"length\": 10, \"type\": \"mention\"}]}}",
+  "body": "{\"update_id\": 813999319, \"message\": {\"message_id\": 13, \"from\": {\"id\": 99999999, \"is_bot\": false, \"first_name\": \"Test\", \"last_name\": \"User\", \"username\": \"test_user\", \"language_code\": \"en\"}, \"chat\": {\"id\": 99999999, \"first_name\": \"Test\", \"last_name\": \"User\", \"username\": \"test_user\", \"type\": \"private\"}, \"date\": 199999983, \"text\": \"/add @test_user\", \"entities\": [{\"offset\": 0, \"length\": 4, \"type\": \"bot_command\"}, {\"offset\": 5, \"length\": 10, \"type\": \"mention\"}]}}",
   "headers": {
       "Accept-Encoding": "gzip, deflate",
       "CloudFront-Forwarded-Proto": "https",
@@ -67,7 +67,7 @@
       ]
   },
   "multiValueQueryStringParameters": null,
-  "path": "/blacklist/",
+  "path": "/whitelist/",
   "pathParameters": null,
   "queryStringParameters": null,
   "requestContext": {

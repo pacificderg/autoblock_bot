@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   autoblock bot
 
-  Telegram bot that implements a blocklist
+  Telegram bot that implements a blacklist and a whitelist
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -11,12 +11,26 @@ Globals:
     Timeout: 30
 
 Resources:
-  AutoBlockTable:
-    Type: AWS::Serverless::SimpleTable
+  RolesTable:
+    Type: AWS::DynamoDB:Table
     Properties:
-      PrimaryKey:
-        Name: pk
-        Type: String
+      AttributeDefinitions:
+        -
+          AttributeName: "pk"
+          AttributeType: "S"
+        -
+          AttributeName: "sk"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "pk"
+          KeyType: "HASH"
+        -
+          AttributeName: "sk"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   AutoBlockFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -27,17 +41,27 @@ Resources:
       MemorySize: 256
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref AutoBlockTable
+            TableName: !Ref RolesTable
         - AmazonSSMReadOnlyAccess
       Environment:
         Variables:
-          TABLE_NAME: !Ref AutoBlockTable
+          ROLE_TABLE_NAME: !Ref RolesTable
           APP_CONFIG_PATH: '/autoblock_bot'
       Events:
         WebHook:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /webhook
+            Method: post
+        Whitelist:
+          Type: Api
+          Properties:
+            Path: /whitelist
+            Method: post
+        Blacklist:
+          Type: Api
+          Properties:
+            Path: /blacklist
             Method: post
 
 
@@ -54,6 +78,6 @@ Outputs:
   AutoBlockFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
     Value: !GetAtt AutoBlockFunctionRole.Arn
-  AutoBlockTable:
-    Description: "DynamoDB table containing blocked users"
-    Value: !GetAtt AutoBlockTable.Arn
+  RolesTable:
+    Description: "DynamoDB table containing role associations"
+    Value: !GetAtt RolesTable.Arn
