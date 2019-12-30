@@ -1,5 +1,5 @@
 from . import blacklist, whitelist
-from telethon import TelegramClient
+from telethon import TelegramClient, sync
 import boto3
 import json
 import os
@@ -20,7 +20,7 @@ config = None
 client = None
 
 handlers = {
-    '/webhook/': blacklist.Handler(ROLE_TABLE_NAME, 'webhook', dynamodb),
+    '/webhook/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
     '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
     '/whitelist/': whitelist.Handler(ROLE_TABLE_NAME, 'whitelist', dynamodb)
 }

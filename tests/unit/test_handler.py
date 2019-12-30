@@ -1,4 +1,4 @@
-from autoblock_function import app
+from autoblock_function.autoblock import app
 import requests, pytest, json, io
 
 
@@ -110,12 +110,12 @@ def non_added_user_response():
 
 @pytest.fixture()
 def mock_setup(ssm_configuration, mocker):
-    mocker.patch('autoblock_function.app.ssm.get_parameters_by_path')
-    mocker.patch('autoblock_function.app.dynamodb.get_item')
-    mocker.patch('autoblock_function.app.dynamodb.put_item')
-    mocker.patch('autoblock_function.app.dynamodb.delete_item')
+    mocker.patch('autoblock_function.autoblock.app.ssm.get_parameters_by_path')
+    mocker.patch('autoblock_function.autoblock.app.dynamodb.get_item')
+    mocker.patch('autoblock_function.autoblock.app.dynamodb.put_item')
+    mocker.patch('autoblock_function.autoblock.app.dynamodb.delete_item')
     mocker.patch('requests.post')
-    mocker.patch('autoblock_function.app.TelegramClient')
+    mocker.patch('autoblock_function.autoblock.app.TelegramClient')
 
     app.ssm.get_parameters_by_path.return_value = ssm_configuration
     app.client = None

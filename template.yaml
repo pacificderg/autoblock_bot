@@ -12,7 +12,7 @@ Globals:
 
 Resources:
   RolesTable:
-    Type: AWS::DynamoDB:Table
+    Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
         -
@@ -36,7 +36,7 @@ Resources:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: autoblock_function/
-      Handler: app.lambda_handler
+      Handler: autoblock.app.lambda_handler
       Runtime: python3.7
       MemorySize: 256
       Policies:
