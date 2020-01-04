@@ -14,13 +14,13 @@ APP_CONFIG_PATH = os.environ.get('APP_CONFIG_PATH', '/autoblock_bot')
 ROLE_TABLE_NAME = os.environ.get('ROLE_TABLE_NAME', 'Roles')
 
 # Initialize parameters for use across invocations
+cloudwatch = boto3.client('cloudwatch')
 dynamodb = boto3.client('dynamodb')
 ssm = boto3.client('ssm')
 config = None
 client = None
 
 handlers = {
-    '/webhook/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
     '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
     '/whitelist/': whitelist.Handler(ROLE_TABLE_NAME, 'whitelist', dynamodb)
 }
@@ -97,6 +97,8 @@ def handle_new_user(handler, chat_id, user_id, username):
 
         requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(config['bot_key']), data=payload)
 
+        publish_count_metric('UserRemoved')
+
 
 def handle_command(handler, chat_id, from_id, message_id, text, entities):
     print('Got command: {}'.format(text))
@@ -115,6 +117,7 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
     # Check that the user who issued the command is an admin
     if not is_user_admin(from_id):
         print('Ignoring command from non-admin: {}'.format(from_id))
+        publish_count_metric('NonAdminCommandIgnored')
         return
 
     if command in USERNAME_COMMANDS:
@@ -147,6 +150,7 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
             'text': 'Unknown command'
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        publish_count_metric('UnknownCommand')
 
 
 def handle_is_user_banned_command(handler, chat_id, message_id, username):
@@ -178,6 +182,8 @@ def handle_is_user_banned_command(handler, chat_id, message_id, username):
             'text': '{} ({}) is not banned'.format(username, info.id)
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+
+    publish_count_metric('IsBannedCommand')
 
 
 def handle_add_user_command(handler, chat_id, message_id, username):
@@ -215,6 +221,8 @@ def handle_add_user_command(handler, chat_id, message_id, username):
     }
     requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
 
+    publish_count_metric('AddUserCommand')
+
 
 def handle_remove_user_command(handler, chat_id, message_id, username):
     if client is None:
@@ -251,9 +259,22 @@ def handle_remove_user_command(handler, chat_id, message_id, username):
     }
     requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
 
+    publish_count_metric('RemoveUserCommand')
+
 
 def is_user_admin(user_id):
     if config is None:
         load_config()
 
     return str(user_id) in config['root_users']
+
+
+def publish_count_metric(metric_name):
+    cloudwatch.put_metric_data(
+        Namespace='AutoblockBot',
+        MetricData=[{
+            'MetricName': metric_name,
+            'Values': [1.0],
+            'Unit': 'Count'
+        }]
+    )

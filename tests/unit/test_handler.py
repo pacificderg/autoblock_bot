@@ -114,6 +114,7 @@ def mock_setup(ssm_configuration, mocker):
     mocker.patch('autoblock_function.autoblock.app.dynamodb.get_item')
     mocker.patch('autoblock_function.autoblock.app.dynamodb.put_item')
     mocker.patch('autoblock_function.autoblock.app.dynamodb.delete_item')
+    mocker.patch('autoblock_function.autoblock.app.cloudwatch.put_metric_data')
     mocker.patch('requests.post')
     mocker.patch('autoblock_function.autoblock.app.TelegramClient')
 
