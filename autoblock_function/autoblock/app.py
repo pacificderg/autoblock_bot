@@ -6,7 +6,7 @@ import os
 import requests
 
 # Constants we use in configuration below
-EXPECTED_CONFIG = ['bot_key', 'api_id', 'api_hash', 'root_users']
+EXPECTED_CONFIG = ['bot_key', 'bot_userid', 'api_id', 'api_hash', 'root_users']
 USERNAME_COMMANDS = ['/isbanned', '/add', '/remove']
 
 # Collect environment settings
@@ -65,6 +65,7 @@ def lambda_handler(event, context):
 
     if 'message' in body:
         chat_id = body['message']['chat']['id']
+        chat_title = body['message']['chat'].get('title', 'Private chat')
         chat_type = body['message']['chat']['type']
         from_id = body['message']['from']['id']
         message_id = body['message']['message_id']
@@ -73,7 +74,7 @@ def lambda_handler(event, context):
             user_id = body['message']['new_chat_participant']['id']
             username = body['message']['new_chat_participant']['username']
 
-            handle_new_user(handler, chat_id, user_id, username)
+            handle_new_user(handler, chat_id, chat_type, chat_title, user_id, username)
         elif chat_type == 'private' and 'text' in body['message'] and 'entities' in body['message']:
             text = body['message']['text']
             entities = body['message']['entities']
@@ -86,8 +87,18 @@ def lambda_handler(event, context):
     }
 
 
-def handle_new_user(handler, chat_id, user_id, username):
-    if not is_user_admin(user_id) and handler.is_user_banned(user_id):
+def handle_new_user(handler, chat_id, chat_type, chat_title, user_id, username):
+    if str(user_id) == config['bot_userid'] and chat_type == 'supergroup':
+        print('Added to new chat: {} ({})'.format(chat_title, chat_id))
+        payload = {
+            'chat_id': chat_id,
+            'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
+                    ' must be made an admin.'
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+
+        publish_count_metric('AddedToChat')
+    elif not is_user_admin(user_id) and handler.is_user_banned(user_id):
         # Ban user
         print('User {} (@{}) is banned, banning'.format(user_id, username))
         payload = {
@@ -113,6 +124,19 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
     command = text[command_entity['offset']:command_entity['offset'] + command_entity['length']]
 
     print('Parsed command: {}'.format(command))
+
+    # Check for the start command first, and reply with a hello message
+    if command == '/start':
+        payload = {
+            'chat_id': chat_id,
+            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and relased to the public to help'
+                    ' room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and'
+                    ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
+                    ' start.'
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        publish_count_metric('StartCommand')
+        return
 
     # Check that the user who issued the command is an admin
     if not is_user_admin(from_id):

@@ -3,6 +3,7 @@ import requests, pytest, json, io
 
 
 TEST_USER_ID = 99999999
+BOT_USER_ID = 88888888
 
 
 @pytest.fixture()
@@ -58,6 +59,16 @@ def remove_command_event():
 @pytest.fixture()
 def remove_whitelist_command_event():
     return json.load(open('events/remove_whitelist_command.json'))
+
+
+@pytest.fixture()
+def start_command_event():
+    return json.load(open('events/start_command.json'))
+
+
+@pytest.fixture()
+def bot_new_chat_event():
+    return json.load(open('events/bot_new_chat.json'))
     
 
 @pytest.fixture()
@@ -79,6 +90,10 @@ def ssm_configuration():
             'Name': '/autoblock_bot/root_users',
             'Value': '{}'.format(TEST_USER_ID),
             'Type': 'StringList'
+        }, {
+            'Name': '/autoblock_bot/bot_userid',
+            'Value': '{}'.format(BOT_USER_ID),
+            'Type': 'String'
         }]
     }
 
@@ -148,6 +163,40 @@ def test_message_event(message_event, mock_setup):
     assert ret['statusCode'] == 200
     assert app.dynamodb.get_item.call_count == 0
     assert requests.post.call_count == 0
+
+
+def test_start_command_event(start_command_event, mock_setup):
+    # pylint: disable=no-member
+    ret = app.lambda_handler(start_command_event, "")
+
+    assert ret['statusCode'] == 200
+    assert app.dynamodb.get_item.call_count == 0
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': 99999999,
+            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and relased to the public to help'
+                    ' room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and'
+                    ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
+                    ' start.'
+        }
+    )
+
+
+def test_bot_new_chat_event(bot_new_chat_event, mock_setup):
+    # pylint: disable=no-member
+    ret = app.lambda_handler(bot_new_chat_event, "")
+
+    assert ret['statusCode'] == 200
+    assert app.dynamodb.get_item.call_count == 0
+    requests.post.assert_called_once_with(
+        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        data={
+            'chat_id': -1009999992388,
+            'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
+                    ' must be made an admin.'
+        }
+    )
 
 
 def test_non_banned_user(new_member_event, non_added_user_response, mock_setup):
