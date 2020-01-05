@@ -42,6 +42,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RolesTable
+        - CloudWatchPutMetricPolicy: {}
         - AmazonSSMReadOnlyAccess
       Environment:
         Variables:
