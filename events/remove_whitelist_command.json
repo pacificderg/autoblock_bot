@@ -69,7 +69,7 @@
   "multiValueQueryStringParameters": null,
   "path": "/whitelist/",
   "pathParameters": null,
-  "queryStringParameters": null,
+  "queryStringParameters": {"bot_key": "88888888:TEST"},
   "requestContext": {
       "accountId": "999999999999",
       "apiId": "test",

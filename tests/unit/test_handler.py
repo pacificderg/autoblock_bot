@@ -4,6 +4,7 @@ import requests, pytest, json, io
 
 TEST_USER_ID = 99999999
 BOT_USER_ID = 88888888
+BOT_KEY = '88888888:TEST'
 
 
 @pytest.fixture()
@@ -76,7 +77,7 @@ def ssm_configuration():
     return {
         'Parameters': [{
             'Name': '/autoblock_bot/bot_key',
-            'Value': 'SECRET_KEY',
+            'Value': '88888888:TEST',
             'Type': 'String'
         }, {
             'Name': '/autoblock_bot/api_id',
@@ -134,7 +135,7 @@ def mock_setup(ssm_configuration, mocker):
     mocker.patch('autoblock_function.autoblock.app.TelegramClient')
 
     app.ssm.get_parameters_by_path.return_value = ssm_configuration
-    app.client = None
+    app.clients = {}
 
 
 @pytest.fixture()
@@ -172,7 +173,7 @@ def test_start_command_event(start_command_event, mock_setup):
     assert ret['statusCode'] == 200
     assert app.dynamodb.get_item.call_count == 0
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and relased to the public to help'
@@ -190,7 +191,7 @@ def test_bot_new_chat_event(bot_new_chat_event, mock_setup):
     assert ret['statusCode'] == 200
     assert app.dynamodb.get_item.call_count == 0
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': -1009999992388,
             'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
@@ -242,7 +243,7 @@ def test_blacklisted_user(new_member_event, added_user_response, mock_setup):
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/kickChatMember',
+        'https://api.telegram.org/bot{}/kickChatMember'.format(BOT_KEY),
         data={
             'chat_id': -1009999992388,
             'user_id': 999999402
@@ -265,7 +266,7 @@ def test_non_whitelisted_user(new_member_whitelist_event, non_added_user_respons
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/kickChatMember',
+        'https://api.telegram.org/bot{}/kickChatMember'.format(BOT_KEY),
         data={
             'chat_id': -1009999992388,
             'user_id': 999999402
@@ -280,7 +281,7 @@ def test_unknown_command(unknown_command_event, mock_setup):
     assert ret['statusCode'] == 200
     assert app.dynamodb.get_item.call_count == 0
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -306,9 +307,9 @@ def test_command(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_blacklist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -353,7 +354,7 @@ def test_add_command(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_blacklist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     app.dynamodb.put_item.assert_called_once_with(
         TableName='Roles',
         Item={
@@ -365,7 +366,7 @@ def test_add_command(
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -391,7 +392,7 @@ def test_add_whitelist_command(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_whitelist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     app.dynamodb.put_item.assert_called_once_with(
         TableName='Roles',
         Item={
@@ -403,7 +404,7 @@ def test_add_whitelist_command(
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -429,10 +430,10 @@ def test_add_command_added_user(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_blacklist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     assert app.dynamodb.put_item.call_count == 0
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -458,7 +459,7 @@ def test_remove_command(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_blacklist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     app.dynamodb.delete_item.assert_called_once_with(
         TableName='Roles',
         Key={
@@ -467,7 +468,7 @@ def test_remove_command(
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -493,7 +494,7 @@ def test_remove_whitelist_command(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_whitelist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     app.dynamodb.delete_item.assert_called_once_with(
         TableName='Roles',
         Key={
@@ -502,7 +503,7 @@ def test_remove_whitelist_command(
         }
     )
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
@@ -528,10 +529,10 @@ def test_remove_command_non_added_user(
         TableName='Roles',
         Key={'pk': {'S': 'user_{}'.format(TEST_USER_ID)}, 'sk': {'S': 'role_blacklist'}}
     )
-    app.client.get_entity.assert_called_once_with('@test_user')
+    app.clients[BOT_KEY].get_entity.assert_called_once_with('@test_user')
     assert app.dynamodb.delete_item.call_count == 0
     requests.post.assert_called_once_with(
-        'https://api.telegram.org/botSECRET_KEY/sendMessage',
+        'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,

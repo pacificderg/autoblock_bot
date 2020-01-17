@@ -6,7 +6,7 @@ import os
 import requests
 
 # Constants we use in configuration below
-EXPECTED_CONFIG = ['bot_key', 'bot_userid', 'api_id', 'api_hash', 'root_users']
+EXPECTED_CONFIG = ['api_id', 'api_hash', 'root_users']
 USERNAME_COMMANDS = ['/isbanned', '/add', '/remove']
 
 # Collect environment settings
@@ -18,7 +18,7 @@ cloudwatch = boto3.client('cloudwatch')
 dynamodb = boto3.client('dynamodb')
 ssm = boto3.client('ssm')
 config = None
-client = None
+clients = {}
 
 handlers = {
     '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
@@ -45,14 +45,19 @@ def load_config():
     config = parsed_config
 
 
-def load_client():
+def load_client(bot_key):
     if config is None:
         print("Loading config and creating new app config")
         load_config()
 
-    global client
-    client = TelegramClient('/tmp/autoblock_bot', config['api_id'], config['api_hash'])
-    client.start(bot_token=config['bot_key'])
+    bot_id = bot_key.split(':')[0]
+
+    print('Starting client for bot', bot_id)
+
+    global clients
+    client = TelegramClient('/tmp/autoblock_bot_{}'.format(bot_id), config['api_id'], config['api_hash'])
+    client.start(bot_token=bot_key)
+    clients[bot_key] = client
 
 
 def lambda_handler(event, context):
@@ -61,6 +66,7 @@ def lambda_handler(event, context):
         load_config()
 
     handler = handlers[event['path']]
+    bot_key = event['queryStringParameters']['bot_key']
     body = json.loads(event['body'])
 
     if 'message' in body:
@@ -74,12 +80,12 @@ def lambda_handler(event, context):
             user_id = body['message']['new_chat_participant']['id']
             username = body['message']['new_chat_participant'].get('username', 'no_username')
 
-            handle_new_user(handler, chat_id, chat_type, chat_title, user_id, username)
+            handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username)
         elif chat_type == 'private' and 'text' in body['message'] and 'entities' in body['message']:
             text = body['message']['text']
             entities = body['message']['entities']
 
-            handle_command(handler, chat_id, from_id, message_id, text, entities)
+            handle_command(handler, bot_key, chat_id, from_id, message_id, text, entities)
 
     return {
         'statusCode': 200,
@@ -87,15 +93,17 @@ def lambda_handler(event, context):
     }
 
 
-def handle_new_user(handler, chat_id, chat_type, chat_title, user_id, username):
-    if str(user_id) == config['bot_userid'] and chat_type == 'supergroup':
+def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username):
+    bot_id = bot_key.split(':')[0]
+
+    if str(user_id) == bot_id and chat_type == 'supergroup':
         print('Added to new chat: {} ({})'.format(chat_title, chat_id))
         payload = {
             'chat_id': chat_id,
             'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
                     ' must be made an admin.'
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
 
         publish_count_metric('AddedToChat')
     elif not is_user_admin(user_id) and handler.is_user_banned(user_id):
@@ -106,12 +114,12 @@ def handle_new_user(handler, chat_id, chat_type, chat_title, user_id, username):
             'user_id': user_id
         }
 
-        requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(bot_key), data=payload)
 
         publish_count_metric('UserRemoved')
 
 
-def handle_command(handler, chat_id, from_id, message_id, text, entities):
+def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entities):
     print('Got command: {}'.format(text))
 
     # Handle entities: if there are any bot commands, operate on the first one.
@@ -134,7 +142,7 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
                     ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
                     ' start.'
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         publish_count_metric('StartCommand')
         return
 
@@ -155,17 +163,17 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
                 'reply_to_message_id': message_id,
                 'text': 'This command requires a username.'
             }
-            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
             return
 
         username = text[mention_entity['offset']:mention_entity['offset'] + mention_entity['length']]
 
         if command == '/isbanned':
-            handle_is_user_banned_command(handler, chat_id, message_id, username)
+            handle_is_user_banned_command(handler, bot_key, chat_id, message_id, username)
         elif command == '/add':
-            handle_add_user_command(handler, chat_id, message_id, username)
+            handle_add_user_command(handler, bot_key, chat_id, message_id, username)
         elif command == '/remove':
-            handle_remove_user_command(handler, chat_id, message_id, username)
+            handle_remove_user_command(handler, bot_key, chat_id, message_id, username)
     else:
         # Unknown command, reply as such
         payload = {
@@ -173,23 +181,23 @@ def handle_command(handler, chat_id, from_id, message_id, text, entities):
             'reply_to_message_id': message_id,
             'text': 'Unknown command'
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         publish_count_metric('UnknownCommand')
 
 
-def handle_is_user_banned_command(handler, chat_id, message_id, username):
-    if client is None:
-        load_client()
+def handle_is_user_banned_command(handler, bot_key, chat_id, message_id, username):
+    if clients.get(bot_key) is None:
+        load_client(bot_key)
 
     try:
-        info = client.get_entity(username)
+        info = clients[bot_key].get_entity(username)
     except ValueError as e:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         return
 
     if handler.is_user_banned(info.id):
@@ -198,31 +206,31 @@ def handle_is_user_banned_command(handler, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': '{} ({}) is banned'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
     else:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
             'text': '{} ({}) is not banned'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
 
     publish_count_metric('IsBannedCommand')
 
 
-def handle_add_user_command(handler, chat_id, message_id, username):
-    if client is None:
-        load_client()
+def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
+    if clients.get(bot_key) is None:
+        load_client(bot_key)
 
     try:
-        info = client.get_entity(username)
+        info = clients[bot_key].get_entity(username)
     except ValueError as e:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         return
 
     # Check to see if user is already banned
@@ -232,7 +240,7 @@ def handle_add_user_command(handler, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': '{} ({}) is already added'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         return
 
     handler.add_role_to(info.id, username)
@@ -243,24 +251,24 @@ def handle_add_user_command(handler, chat_id, message_id, username):
         'reply_to_message_id': message_id,
         'text': '{} ({}) has been added'.format(username, info.id)
     }
-    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
 
     publish_count_metric('AddUserCommand')
 
 
-def handle_remove_user_command(handler, chat_id, message_id, username):
-    if client is None:
-        load_client()
+def handle_remove_user_command(handler, bot_key, chat_id, message_id, username):
+    if clients.get(bot_key) is None:
+        load_client(bot_key)
 
     try:
-        info = client.get_entity(username)
+        info = clients[bot_key].get_entity(username)
     except ValueError as e:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         return
 
     # Check to see if user is not banned
@@ -270,7 +278,7 @@ def handle_remove_user_command(handler, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': '{} ({}) is not added'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         return
 
     handler.remove_role_from(info.id)
@@ -281,7 +289,7 @@ def handle_remove_user_command(handler, chat_id, message_id, username):
         'reply_to_message_id': message_id,
         'text': '{} ({}) has been removed'.format(username, info.id)
     }
-    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(config['bot_key']), data=payload)
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
 
     publish_count_metric('RemoveUserCommand')
 
