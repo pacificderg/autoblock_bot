@@ -1,8 +1,15 @@
+from botocore.exceptions import ClientError
+import logging
+
+BLOCKLIST_KEY = 'autoblock_blacklist.zip'
+
 class Handler:
-    def __init__(self, table_name, role_name, dynamodb):
+    def __init__(self, table_name, output_bucket_name, role_name, dynamodb, s3):
         self.table_name = table_name
+        self.output_bucket_name = output_bucket_name
         self.role_name = role_name
         self.dynamodb = dynamodb
+        self.s3 = s3
 
     @property
     def welcome_message(self):
@@ -10,6 +17,18 @@ class Handler:
                'room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and ' \
                'the bot will autoblock any Nazifur on its list of users from your room before any trouble can ' \
                'start.'
+
+    def get_blocklist_url(self):
+        try:
+            response = self.s3.generate_presigned_url('get_object', Params={
+                'Bucket': self.output_bucket_name,
+                'Key': BLOCKLIST_KEY
+            })
+        except ClientError as e:
+            logging.error(e)
+            return None
+
+        return response
 
     def is_user_banned(self, user_id):
         return self.has_role(user_id)

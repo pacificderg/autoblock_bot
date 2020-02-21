@@ -12,16 +12,18 @@ USERNAME_COMMANDS = ['/isbanned', '/add', '/remove']
 # Collect environment settings
 APP_CONFIG_PATH = os.environ.get('APP_CONFIG_PATH', '/autoblock_bot')
 ROLE_TABLE_NAME = os.environ.get('ROLE_TABLE_NAME', 'Roles')
+OUTPUT_BUCKET_NAME = os.environ.get('OUTPUT_BUCKET_NAME', 'output-bucket')
 
 # Initialize parameters for use across invocations
 cloudwatch = boto3.client('cloudwatch')
 dynamodb = boto3.client('dynamodb')
+s3 = boto3.client('s3')
 ssm = boto3.client('ssm')
 config = None
 clients = {}
 
 handlers = {
-    '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, 'blacklist', dynamodb),
+    '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, OUTPUT_BUCKET_NAME, 'blacklist', dynamodb, s3),
     '/whitelist/': whitelist.Handler(ROLE_TABLE_NAME, 'whitelist', dynamodb)
 }
 
@@ -141,6 +143,25 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         publish_count_metric('StartCommand')
+        return
+    elif command == '/getlist':
+        list_url = handler.get_blocklist_url()
+        if list_url is None:
+            payload = {
+                'chat_id': chat_id,
+                'reply_to_message_id': message_id,
+                'text': 'No list is available.'
+            }
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+            return
+
+        print("Sending list: {}".format(list_url))
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'document': list_url
+        }
+        requests.post('https://api.telegram.org/bot{}/sendDocument'.format(bot_key), data=payload)
         return
 
     # Check that the user who issued the command is an admin

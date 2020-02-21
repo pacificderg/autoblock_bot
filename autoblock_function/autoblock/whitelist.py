@@ -8,6 +8,9 @@ class Handler:
     def welcome_message(self):
         return 'This bot implements room permissions for @FurryPartyOfArtAndLabor.'
 
+    def get_blocklist_url(self):
+        return None
+
     def is_user_banned(self, user_id):
         return not self.has_role(user_id)
 

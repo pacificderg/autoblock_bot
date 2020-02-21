@@ -19,14 +19,40 @@ Resources:
           AttributeType: "S"
         - AttributeName: "sk"
           AttributeType: "S"
+        - AttributeName: "role_users_pk"
+          AttributeType: "S"
+        - AttributeName: "role_users_sk"
+          AttributeType: "S"
       KeySchema:
         - AttributeName: "pk"
           KeyType: "HASH"
         - AttributeName: "sk"
           KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - IndexName: role_users
+          KeySchema:
+            - AttributeName: "role_users_pk"
+              KeyType: "HASH"
+            - AttributeName: "role_users_sk"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+
+  ScraperOutputBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
 
   AutoBlockFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -38,11 +64,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RolesTable
+        - S3ReadPolicy:
+            BucketName: !Ref ScraperOutputBucket
         - CloudWatchPutMetricPolicy: {}
         - AmazonSSMReadOnlyAccess
       Environment:
         Variables:
           ROLE_TABLE_NAME: !Ref RolesTable
+          ROLE_USERS_INDEX: role_users
+          OUTPUT_BUCKET_NAME: !Ref ScraperOutputBucket
           APP_CONFIG_PATH: '/autoblock_bot'
       Events:
         WebHook:
@@ -60,6 +90,44 @@ Resources:
           Properties:
             Path: /blacklist
             Method: post
+
+  BlocklistScraperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: autoblock_function/
+      Handler: autoblock.blocklist_scraper.lambda_handler
+      Runtime: python3.7
+      MemorySize: 512
+      Timeout: 900
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RolesTable
+        - S3CrudPolicy:
+            BucketName: !Ref ScraperOutputBucket
+        - CloudWatchPutMetricPolicy: {}
+      Environment:
+        Variables:
+          ROLE_TABLE_NAME: !Ref RolesTable
+          ROLE_USERS_INDEX: role_users
+          OUTPUT_BUCKET_NAME: !Ref ScraperOutputBucket
+
+  AutoScrapeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Periodically scrape the blocked users list"
+      ScheduleExpression: rate(7 days)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt BlocklistScraperFunction.Arn
+          Id: BlocklistScraperTarget
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BlocklistScraperFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AutoScrapeRule.Arn
 
 
 Outputs:
