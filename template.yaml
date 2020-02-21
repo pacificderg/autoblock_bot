@@ -15,18 +15,14 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-        -
-          AttributeName: "pk"
+        - AttributeName: "pk"
           AttributeType: "S"
-        -
-          AttributeName: "sk"
+        - AttributeName: "sk"
           AttributeType: "S"
       KeySchema:
-        -
-          AttributeName: "pk"
+        - AttributeName: "pk"
           KeyType: "HASH"
-        -
-          AttributeName: "sk"
+        - AttributeName: "sk"
           KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: 5

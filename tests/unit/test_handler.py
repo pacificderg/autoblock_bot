@@ -176,7 +176,7 @@ def test_start_command_event(start_command_event, mock_setup):
         'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
-            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and relased to the public to help'
+            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and released to the public to help'
                     ' room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and'
                     ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
                     ' start.'

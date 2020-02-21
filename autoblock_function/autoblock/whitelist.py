@@ -4,6 +4,10 @@ class Handler:
         self.role_name = role_name
         self.dynamodb = dynamodb
 
+    @property
+    def welcome_message(self):
+        return 'This bot implements room permissions for @FurryPartyOfArtAndLabor.'
+
     def is_user_banned(self, user_id):
         return not self.has_role(user_id)
 

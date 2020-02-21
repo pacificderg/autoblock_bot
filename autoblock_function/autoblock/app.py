@@ -137,10 +137,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
     if command == '/start':
         payload = {
             'chat_id': chat_id,
-            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and relased to the public to help'
-                    ' room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and'
-                    ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
-                    ' start.'
+            'text': handler.welcome_message
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
         publish_count_metric('StartCommand')
