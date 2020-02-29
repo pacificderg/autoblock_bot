@@ -162,6 +162,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
             'document': list_url
         }
         requests.post('https://api.telegram.org/bot{}/sendDocument'.format(bot_key), data=payload)
+        publish_count_metric('GetListCommand')
         return
 
     # Check that the user who issued the command is an admin
