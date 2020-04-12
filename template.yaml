@@ -159,9 +159,9 @@ Resources:
                 - Name: FunctionName
                   Value: !Ref AutoBlockFunction
               MetricName: Errors
-            Period: 300
-            Stat: Sum
-            Unit: Count
+              Period: 300
+              Stat: Sum
+              Unit: Count
 
   AutoBlockDurationAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -183,9 +183,9 @@ Resources:
               - Name: FunctionName
                 Value: !Ref AutoBlockFunction
             MetricName: Duration
-          Period: 300
-          Stat: Maximum
-          Unit: Milliseconds
+            Period: 300
+            Stat: Maximum
+            Unit: Milliseconds
 
   BlocklistScraperErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -208,9 +208,9 @@ Resources:
                 - Name: FunctionName
                   Value: !Ref BlocklistScraperFunction
               MetricName: Errors
-            Period: 300
-            Stat: Sum
-            Unit: Count
+              Period: 300
+              Stat: Sum
+              Unit: Count
 
   BlocklistScraperDurationAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -232,9 +232,9 @@ Resources:
               - Name: FunctionName
                 Value: !Ref BlocklistScraperFunction
             MetricName: Duration
-          Period: 300
-          Stat: Maximum
-          Unit: Milliseconds
+            Period: 300
+            Stat: Maximum
+            Unit: Milliseconds
 
   ApiGatewayVolumeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -256,9 +256,9 @@ Resources:
               - Name: ApiName
                 Value: autoblock-bot
             MetricName: Count
-          Period: 300
-          Stat: Sum
-          Unit: Count
+            Period: 300
+            Stat: Sum
+            Unit: Count
 
   DynamoDBReadCapacityAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -269,7 +269,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 2
-      ThresholdMetric: ReadCapacity
+      ThresholdMetricId: ReadCapacity
       TreatMissingData: notBreaching
       Metrics:
         - Id: ReadCapacity
@@ -280,9 +280,9 @@ Resources:
               - Name: TableName
                 Value: !Ref RolesTable
             MetricName: ConsumedReadCapacityUnits
-          Period: 300
-          Stat: Maximum
-          Unit: Count
+            Period: 300
+            Stat: Maximum
+            Unit: Count
 
   DynamoDBWriteCapacityAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -293,7 +293,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 2
-      ThresholdMetric: WriteCapacity
+      ThresholdMetricId: WriteCapacity
       TreatMissingData: notBreaching
       Metrics:
         - Id: WriteCapacity
@@ -304,9 +304,9 @@ Resources:
               - Name: TableName
                 Value: !Ref RolesTable
             MetricName: ConsumedWriteCapacityUnits
-          Period: 300
-          Stat: Maximum
-          Unit: Count
+            Period: 300
+            Stat: Maximum
+            Unit: Count
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
