@@ -1,3 +1,6 @@
 aws-sam-cli
 pytest
 pytest-mock
+requests
+boto3
+Telethon

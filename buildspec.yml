@@ -6,7 +6,7 @@ phases:
       python: 3.7
     commands:
       # Install aws-cli and sam to build the project
-      - pip install -U aws-sam-cli pytest pytest-mock
+      - pip install -U -r requirements.txt
 
   pre_build:
     commands:
