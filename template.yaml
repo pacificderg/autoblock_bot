@@ -154,15 +154,14 @@ Resources:
           Label: AutoBlock lambda failures
           MetricStat:
             Metric:
-              Metric:
-                Namespace: AWS/Lambda
-                Dimensions:
-                  - Name: FunctionName
-                    Value: !Ref AutoBlockFunction
-                MetricName: Errors
-              Period: 300
-              Stat: Sum
-              Unit: Count
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref AutoBlockFunction
+              MetricName: Errors
+            Period: 300
+            Stat: Sum
+            Unit: Count
 
   AutoBlockDurationAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -205,15 +204,14 @@ Resources:
           Label: BlocklistScraper lambda failures
           MetricStat:
             Metric:
-              Metric:
-                Namespace: AWS/Lambda
-                Dimensions:
-                  - Name: FunctionName
-                    Value: !Ref BlocklistScraperFunction
-                MetricName: Errors
-              Period: 300
-              Stat: Sum
-              Unit: Count
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref BlocklistScraperFunction
+              MetricName: Errors
+            Period: 300
+            Stat: Sum
+            Unit: Count
 
   BlocklistScraperDurationAlarm:
     Type: AWS::CloudWatch::Alarm
