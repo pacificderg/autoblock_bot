@@ -59,7 +59,7 @@ Resources:
       Timeout: 60
       AutoPublishAlias: live
       DeploymentPreference:
-        Type: Canary10Percent5minutes
+        Type: Canary10Percent5Minutes
         Alarms:
           - !Ref AutoBlockErrorAlarm
           - !Ref AutoBlockDurationAlarm
