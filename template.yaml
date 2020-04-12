@@ -57,7 +57,7 @@ Resources:
       Runtime: python3.7
       MemorySize: 256
       Timeout: 60
-      AutoPublishAlias: autoblock-live
+      AutoPublishAlias: live
       DeploymentPreference:
         Type: Canary10Percent5minutes
         Alarms:
