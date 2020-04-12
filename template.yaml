@@ -149,7 +149,7 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Metrics:
-        - Id: AutoBlockErrors
+        - Id: autoBlockErrors
           Label: AutoBlock lambda failures
           ReturnData: true
           MetricStat:
@@ -174,7 +174,7 @@ Resources:
       Threshold: 30000 # 30 seconds
       TreatMissingData: notBreaching
       Metrics:
-        - Id: AutoBlockDuration
+        - Id: autoBlockDuration
           Label: Autoblock execution duration
           ReturnData: true
           MetricStat:
@@ -199,7 +199,7 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Metrics:
-        - Id: BlocklistScraperErrors
+        - Id: blocklistScraperErrors
           Label: BlocklistScraper lambda failures
           ReturnData: true
           MetricStat:
@@ -224,7 +224,7 @@ Resources:
       Threshold: 300000 # 5 minutes
       TreatMissingData: notBreaching
       Metrics:
-        - Id: BlocklistScraperDuration
+        - Id: blocklistScraperDuration
           Label: Autoblock execution duration
           ReturnData: true
           MetricStat:
@@ -249,7 +249,7 @@ Resources:
       Threshold: 150
       TreatMissingData: notBreaching
       Metrics:
-        - Id: ApiGatewayVolume
+        - Id: apiGatewayVolume
           Label: Api Gateway request volume
           ReturnData: true
           MetricStat:
@@ -274,7 +274,7 @@ Resources:
       Threshold: 2
       TreatMissingData: notBreaching
       Metrics:
-        - Id: ReadCapacity
+        - Id: readCapacity
           Label: DynamoDB read capacity used
           ReturnData: true
           MetricStat:
@@ -299,7 +299,7 @@ Resources:
       Threshold: 2
       TreatMissingData: notBreaching
       Metrics:
-        - Id: WriteCapacity
+        - Id: writeCapacity
           Label: DynamoDB write capacity used
           ReturnData: true
           MetricStat:
