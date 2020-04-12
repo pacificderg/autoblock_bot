@@ -1,0 +1,14 @@
+{
+  "Parameters": {},
+  "Tags": {},
+  "StackPolicy": {
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "Update:*",
+        "Principal": "*",
+        "Resource": "*"
+      }
+    ]
+  }
+}

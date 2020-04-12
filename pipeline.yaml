@@ -1,0 +1,243 @@
+Parameters:
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: autoblock_bot
+  GitHubOwner:
+    Description: Owner of the GitHub repository
+    Type: String
+    Default: pacificderg
+  ApplicationName:
+    Description: CodeDeploy application name
+    Type: String
+    Default: AutoblockBot
+
+Resources:
+  ArtifactStoreBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+
+  ArtifactStoreBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactStoreBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Sub '${ArtifactStoreBucket.Arn}/*'
+            Condition:
+              'Null':
+                's3:x-amz-server-side-encryption': true
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: !Sub '${ArtifactStoreBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
+
+  AppPipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: '{{resolve:secretsmanager:AutoblockBotGitHubSecret:SecretString:token}}'
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: 'refs/heads/{Branch}'
+      TargetPipeline: !Ref AppPipeline
+      TargetAction: SourceAction
+      TargetPipelineVersion: !GetAtt AppPipeline.Version
+      RegisterWithThirdParty: true
+
+  AppPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: autoblock-bot-pipeline
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: '{{resolve:secretsmanager:AutoblockBotGitHubSecret:SecretString:token}}'
+                PollForSourceChanges: false
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuild
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 2
+        - Name: Beta
+          Actions:
+            - Name: BetaDeploy
+              InputArtifacts:
+                - Name: BuildOutput
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: autoblock-bot
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt BetaDeployRole.Arn
+                TemplatePath: BuildOutput::packaged.yaml
+                TemplateConfiguration: BuildOutput::beta-configuration.json
+              OutputArtifacts: []
+              RunOrder: 3
+
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: 'Builds the autoblock bot project'
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/standard:4.0'
+        EnvironmentVariables:
+          - Name: S3_BUCKET
+            Value: !Ref ArtifactStoreBucket
+      Source:
+        Type: CODEPIPELINE
+
+  BetaDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AWS-CodeBuild-Service
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:GetBucketArl
+                  - s3:GetBucketLocation
+                Resource:
+                  - !GetAtt ArtifactStoreBucket.Arn
+                  - !Sub '${ArtifactStoreBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AWS-CodePipeline-Service
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                Resource:
+                  - !GetAtt ArtifactStoreBucket.Arn
+                  - !Sub '${ArtifactStoreBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                Resource: '*'
