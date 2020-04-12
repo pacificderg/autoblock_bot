@@ -154,11 +154,12 @@ Resources:
           Label: AutoBlock lambda failures
           MetricStat:
             Metric:
-              Namespace: AWS/Lambda
-              Dimensions:
-                - Name: FunctionName
-                  Value: !Ref AutoBlockFunction
-              MetricName: Errors
+              Metric:
+                Namespace: AWS/Lambda
+                Dimensions:
+                  - Name: FunctionName
+                    Value: !Ref AutoBlockFunction
+                MetricName: Errors
               Period: 300
               Stat: Sum
               Unit: Count
@@ -178,11 +179,12 @@ Resources:
         - Id: AutoBlockDuration
           Label: Autoblock execution duration
           MetricStat:
-            Namespace: AWS/Lambda
-            Dimensions:
-              - Name: FunctionName
-                Value: !Ref AutoBlockFunction
-            MetricName: Duration
+            Metric:
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref AutoBlockFunction
+              MetricName: Duration
             Period: 300
             Stat: Maximum
             Unit: Milliseconds
@@ -203,11 +205,12 @@ Resources:
           Label: BlocklistScraper lambda failures
           MetricStat:
             Metric:
-              Namespace: AWS/Lambda
-              Dimensions:
-                - Name: FunctionName
-                  Value: !Ref BlocklistScraperFunction
-              MetricName: Errors
+              Metric:
+                Namespace: AWS/Lambda
+                Dimensions:
+                  - Name: FunctionName
+                    Value: !Ref BlocklistScraperFunction
+                MetricName: Errors
               Period: 300
               Stat: Sum
               Unit: Count
@@ -227,11 +230,12 @@ Resources:
         - Id: BlocklistScraperDuration
           Label: Autoblock execution duration
           MetricStat:
-            Namespace: AWS/Lambda
-            Dimensions:
-              - Name: FunctionName
-                Value: !Ref BlocklistScraperFunction
-            MetricName: Duration
+            Metric:
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref BlocklistScraperFunction
+              MetricName: Duration
             Period: 300
             Stat: Maximum
             Unit: Milliseconds
@@ -251,11 +255,12 @@ Resources:
         - Id: ApiGatewayVolume
           Label: Api Gateway request volume
           MetricStat:
-            Namespace: AWS/ApiGateway
-            Dimensions:
-              - Name: ApiName
-                Value: autoblock-bot
-            MetricName: Count
+            Metric:
+              Namespace: AWS/ApiGateway
+              Dimensions:
+                - Name: ApiName
+                  Value: autoblock-bot
+              MetricName: Count
             Period: 300
             Stat: Sum
             Unit: Count
@@ -275,11 +280,12 @@ Resources:
         - Id: ReadCapacity
           Label: DynamoDB read capacity used
           MetricStat:
-            Namespace: AWS/DynamoDB
-            Dimensions:
-              - Name: TableName
-                Value: !Ref RolesTable
-            MetricName: ConsumedReadCapacityUnits
+            Metric:
+              Namespace: AWS/DynamoDB
+              Dimensions:
+                - Name: TableName
+                  Value: !Ref RolesTable
+              MetricName: ConsumedReadCapacityUnits
             Period: 300
             Stat: Maximum
             Unit: Count
@@ -299,11 +305,12 @@ Resources:
         - Id: WriteCapacity
           Label: DynamoDB write capacity used
           MetricStat:
-            Namespace: AWS/DynamoDB
-            Dimensions:
-              - Name: TableName
-                Value: !Ref RolesTable
-            MetricName: ConsumedWriteCapacityUnits
+            Metric:
+              Namespace: AWS/DynamoDB
+              Dimensions:
+                - Name: TableName
+                  Value: !Ref RolesTable
+              MetricName: ConsumedWriteCapacityUnits
             Period: 300
             Stat: Maximum
             Unit: Count
