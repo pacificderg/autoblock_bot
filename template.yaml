@@ -147,11 +147,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 0
-      ThresholdMetricId: AutoBlockErrors
       TreatMissingData: notBreaching
       Metrics:
         - Id: AutoBlockErrors
           Label: AutoBlock lambda failures
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/Lambda
@@ -172,11 +172,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 30000 # 30 seconds
-      ThresholdMetricId: AutoBlockDuration
       TreatMissingData: notBreaching
       Metrics:
         - Id: AutoBlockDuration
           Label: Autoblock execution duration
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/Lambda
@@ -197,11 +197,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 0
-      ThresholdMetricId: BlocklistScraperErrors
       TreatMissingData: notBreaching
       Metrics:
         - Id: BlocklistScraperErrors
           Label: BlocklistScraper lambda failures
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/Lambda
@@ -222,11 +222,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 300000 # 5 minutes
-      ThresholdMetricId: BlocklistScraperDuration
       TreatMissingData: notBreaching
       Metrics:
         - Id: BlocklistScraperDuration
           Label: Autoblock execution duration
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/Lambda
@@ -247,11 +247,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 150
-      ThresholdMetricId: ApiGatewayVolume
       TreatMissingData: notBreaching
       Metrics:
         - Id: ApiGatewayVolume
           Label: Api Gateway request volume
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/ApiGateway
@@ -272,11 +272,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 2
-      ThresholdMetricId: ReadCapacity
       TreatMissingData: notBreaching
       Metrics:
         - Id: ReadCapacity
           Label: DynamoDB read capacity used
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/DynamoDB
@@ -297,11 +297,11 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Threshold: 2
-      ThresholdMetricId: WriteCapacity
       TreatMissingData: notBreaching
       Metrics:
         - Id: WriteCapacity
           Label: DynamoDB write capacity used
+          ReturnData: true
           MetricStat:
             Metric:
               Namespace: AWS/DynamoDB
