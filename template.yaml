@@ -5,11 +5,6 @@ Description: >
 
   Telegram bot that implements a blacklist and a whitelist
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 30
-
 Resources:
   RolesTable:
     Type: AWS::DynamoDB::Table
@@ -61,6 +56,12 @@ Resources:
       Handler: autoblock.app.lambda_handler
       Runtime: python3.7
       MemorySize: 256
+      Timeout: 60
+      DeploymentPreference:
+        Type: Canary10Percent5minutes
+        Alarms:
+          - !Ref AutoBlockErrorAlarm
+          - !Ref AutoBlockDurationAlarm
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RolesTable
@@ -129,6 +130,182 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt AutoScrapeRule.Arn
 
+  AlarmPagerTopic:
+    Type: AWS::SNS::Topic
+    DeletionPolicy: Retain
+    Properties:
+      DisplayName: autoblock-bot-pager
+      KmsMasterKeyId: aws/kms
+
+  AutoBlockErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: More than zero autoblock lambda execution failures
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 0
+      ThresholdMetricId: AutoBlockErrors
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: AutoBlockErrors
+          Label: AutoBlock lambda failures
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref AutoBlockFunction
+              MetricName: Errors
+            Period: 300
+            Stat: Sum
+            Unit: Count
+
+  AutoBlockDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Any execution longer than 30 seconds
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 30000 # 30 seconds
+      ThresholdMetricId: AutoBlockDuration
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: AutoBlockDuration
+          Label: Autoblock execution duration
+          MetricStat:
+            Namespace: AWS/Lambda
+            Dimensions:
+              - Name: FunctionName
+                Value: !Ref AutoBlockFunction
+            MetricName: Duration
+          Period: 300
+          Stat: Maximum
+          Unit: Milliseconds
+
+  BlocklistScraperErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: More than zero blocklist scraper lambda execution failures
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 0
+      ThresholdMetricId: BlocklistScraperErrors
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: BlocklistScraperErrors
+          Label: BlocklistScraper lambda failures
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref BlocklistScraperFunction
+              MetricName: Errors
+            Period: 300
+            Stat: Sum
+            Unit: Count
+
+  BlocklistScraperDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Any execution longer than 5 minutes
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 300000 # 5 minutes
+      ThresholdMetricId: BlocklistScraperDuration
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: BlocklistScraperDuration
+          Label: Autoblock execution duration
+          MetricStat:
+            Namespace: AWS/Lambda
+            Dimensions:
+              - Name: FunctionName
+                Value: !Ref BlocklistScraperFunction
+            MetricName: Duration
+          Period: 300
+          Stat: Maximum
+          Unit: Milliseconds
+
+  ApiGatewayVolumeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: More than 150 requests within five minutes
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 150
+      ThresholdMetricId: ApiGatewayVolume
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: ApiGatewayVolume
+          Label: Api Gateway request volume
+          MetricStat:
+            Namespace: AWS/ApiGateway
+            Dimensions:
+              - Name: ApiName
+                Value: autoblock-bot
+            MetricName: Count
+          Period: 300
+          Stat: Sum
+          Unit: Count
+
+  DynamoDBReadCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: More than 2 read capacity units utilized
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 2
+      ThresholdMetric: ReadCapacity
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: ReadCapacity
+          Label: DynamoDB read capacity used
+          MetricStat:
+            Namespace: AWS/DynamoDB
+            Dimensions:
+              - Name: TableName
+                Value: !Ref RolesTable
+            MetricName: ConsumedReadCapacityUnits
+          Period: 300
+          Stat: Maximum
+          Unit: Count
+
+  DynamoDBWriteCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: More than 2 write capacity units utilized
+      AlarmActions:
+        - !Ref AlarmPagerTopic
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 2
+      ThresholdMetric: WriteCapacity
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: WriteCapacity
+          Label: DynamoDB write capacity used
+          MetricStat:
+            Namespace: AWS/DynamoDB
+            Dimensions:
+              - Name: TableName
+                Value: !Ref RolesTable
+            MetricName: ConsumedWriteCapacityUnits
+          Period: 300
+          Stat: Maximum
+          Unit: Count
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
