@@ -105,7 +105,7 @@ def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, u
             'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
                     ' must be made an admin.'
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
         publish_count_metric('AddedToChat')
     elif not is_user_admin(user_id) and handler.is_user_banned(user_id):
@@ -116,7 +116,7 @@ def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, u
             'user_id': user_id
         }
 
-        requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(bot_key), data=payload).raise_for_status()
 
         publish_count_metric('UserRemoved')
 
@@ -141,7 +141,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
             'chat_id': chat_id,
             'text': handler.welcome_message
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         publish_count_metric('StartCommand')
         return
     elif command == '/getlist':
@@ -152,7 +152,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
                 'reply_to_message_id': message_id,
                 'text': 'No list is available.'
             }
-            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
             return
 
         print("Sending list: {}".format(list_url))
@@ -161,7 +161,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
             'reply_to_message_id': message_id,
             'document': list_url
         }
-        requests.post('https://api.telegram.org/bot{}/sendDocument'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendDocument'.format(bot_key), data=payload).raise_for_status()
         publish_count_metric('GetListCommand')
         return
 
@@ -182,7 +182,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
                 'reply_to_message_id': message_id,
                 'text': 'This command requires a username.'
             }
-            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
             return
 
         username = text[mention_entity['offset']:mention_entity['offset'] + mention_entity['length']]
@@ -200,7 +200,7 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
             'reply_to_message_id': message_id,
             'text': 'Unknown command'
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         publish_count_metric('UnknownCommand')
 
 
@@ -216,7 +216,7 @@ def handle_is_user_banned_command(handler, bot_key, chat_id, message_id, usernam
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
     if handler.is_user_banned(info.id):
@@ -225,14 +225,14 @@ def handle_is_user_banned_command(handler, bot_key, chat_id, message_id, usernam
             'reply_to_message_id': message_id,
             'text': '{} ({}) is banned'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
     else:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
             'text': '{} ({}) is not banned'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
     publish_count_metric('IsBannedCommand')
 
@@ -249,7 +249,7 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
     # Check to see if user is already banned
@@ -259,7 +259,7 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': '{} ({}) is already added'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
     handler.add_role_to(info.id, username)
@@ -270,7 +270,7 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
         'reply_to_message_id': message_id,
         'text': '{} ({}) has been added'.format(username, info.id)
     }
-    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
     publish_count_metric('AddUserCommand')
 
@@ -287,7 +287,7 @@ def handle_remove_user_command(handler, bot_key, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': str(e)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
     # Check to see if user is not banned
@@ -297,7 +297,7 @@ def handle_remove_user_command(handler, bot_key, chat_id, message_id, username):
             'reply_to_message_id': message_id,
             'text': '{} ({}) is not added'.format(username, info.id)
         }
-        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
     handler.remove_role_from(info.id)
@@ -308,7 +308,7 @@ def handle_remove_user_command(handler, bot_key, chat_id, message_id, username):
         'reply_to_message_id': message_id,
         'text': '{} ({}) has been removed'.format(username, info.id)
     }
-    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload)
+    requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
     publish_count_metric('RemoveUserCommand')
 

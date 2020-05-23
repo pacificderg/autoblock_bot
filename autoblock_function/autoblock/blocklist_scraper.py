@@ -25,7 +25,11 @@ def lambda_handler(event, context):
     )
 
     for page in page_iterator:
-        usernames.extend(map(lambda item: item['username']['S'], page['Items']))
+        # No separate user ID field, might be worth it to create one instead of doing this.
+        usernames.extend(map(
+            lambda item: '{} ({})'.format(item['username']['S'], item['pk']['S'].split('_')[-1]),
+            page['Items']
+        ))
 
     print("Found {} users in blocklist".format(len(usernames)))
 
