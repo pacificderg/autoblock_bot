@@ -33,8 +33,8 @@ def is_banned_command_event():
 
 
 @pytest.fixture()
-def is_banned_non_admin_command_event():
-    return json.load(open('events/isbanned_non_admin_command.json'))
+def remove_non_admin_command_event():
+    return json.load(open('events/remove_non_admin_command.json'))
 
 
 @pytest.fixture()
@@ -327,10 +327,10 @@ def test_public_command(public_command_event, mock_setup):
     assert requests.post.call_count == 0
 
 
-def test_command_from_non_admin(is_banned_non_admin_command_event, mock_setup):
+def test_command_from_non_admin(remove_non_admin_command_event, mock_setup):
     # pylint: disable=no-member
 
-    ret = app.lambda_handler(is_banned_non_admin_command_event, "")
+    ret = app.lambda_handler(remove_non_admin_command_event, "")
 
     assert ret['statusCode'] == 200
     assert app.dynamodb.get_item.call_count == 0

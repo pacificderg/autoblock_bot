@@ -165,12 +165,6 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
         publish_count_metric('GetListCommand')
         return
 
-    # Check that the user who issued the command is an admin
-    if not is_user_admin(from_id):
-        print('Ignoring command from non-admin: {}'.format(from_id))
-        publish_count_metric('NonAdminCommandIgnored')
-        return
-
     if command in USERNAME_COMMANDS:
         # Try to find a mention
         mention_entity = next(filter(lambda entity: entity['type'] == 'mention', entities), None)
@@ -190,8 +184,20 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
         if command == '/isbanned':
             handle_is_user_banned_command(handler, bot_key, chat_id, message_id, username)
         elif command == '/add':
+            # Check that the user who issued the command is an admin
+            if not is_user_admin(from_id):
+                print('Ignoring command from non-admin: {}'.format(from_id))
+                publish_count_metric('NonAdminCommandIgnored')
+                return
+
             handle_add_user_command(handler, bot_key, chat_id, message_id, username)
         elif command == '/remove':
+            # Check that the user who issued the command is an admin
+            if not is_user_admin(from_id):
+                print('Ignoring command from non-admin: {}'.format(from_id))
+                publish_count_metric('NonAdminCommandIgnored')
+                return
+
             handle_remove_user_command(handler, bot_key, chat_id, message_id, username)
     else:
         # Unknown command, reply as such
