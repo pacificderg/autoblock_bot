@@ -8,6 +8,7 @@ Description: >
 Resources:
   RolesTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: "pk"
@@ -38,6 +39,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
   ScraperOutputBucket:
     Type: AWS::S3::Bucket
@@ -48,6 +51,12 @@ Resources:
         IgnorePublicAcls: true
         BlockPublicPolicy: true
         RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
 
   AutoBlockFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -112,24 +121,12 @@ Resources:
           ROLE_TABLE_NAME: !Ref RolesTable
           ROLE_USERS_INDEX: role_users
           OUTPUT_BUCKET_NAME: !Ref ScraperOutputBucket
-
-  AutoScrapeRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: "Periodically scrape the blocked users list"
-      ScheduleExpression: rate(7 days)
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt BlocklistScraperFunction.Arn
-          Id: BlocklistScraperTarget
-
-  PermissionForEventsToInvokeLambda:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref BlocklistScraperFunction
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt AutoScrapeRule.Arn
+      Events:
+        Trigger:
+          Type: Schedule
+          Properties:
+            Schedule: rate(7 days)
+            Description: Periodically scrape the blocked users list
 
   AlarmPagerTopic:
     Type: AWS::SNS::Topic
