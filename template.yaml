@@ -133,7 +133,7 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       DisplayName: autoblock-bot-pager
-      KmsMasterKeyId: aws/kms
+      KmsMasterKeyId: alias/aws/sns
 
   AutoBlockErrorAlarm:
     Type: AWS::CloudWatch::Alarm
