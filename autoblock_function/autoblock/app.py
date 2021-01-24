@@ -23,8 +23,8 @@ config = None
 clients = {}
 
 handlers = {
-    '/blacklist/': blacklist.Handler(ROLE_TABLE_NAME, OUTPUT_BUCKET_NAME, 'blacklist', dynamodb, s3),
-    '/whitelist/': whitelist.Handler(ROLE_TABLE_NAME, 'whitelist', dynamodb)
+    '/blacklist': blacklist.Handler(ROLE_TABLE_NAME, OUTPUT_BUCKET_NAME, 'blacklist', dynamodb, s3),
+    '/whitelist': whitelist.Handler(ROLE_TABLE_NAME, 'whitelist', dynamodb)
 }
 
 
@@ -67,7 +67,7 @@ def lambda_handler(event, context):
         print("Loading config and creating new app config")
         load_config()
 
-    handler = handlers[event['path']]
+    handler = handlers[event['rawPath']]
     bot_key = event['queryStringParameters']['bot_key']
     body = json.loads(event['body'])
 

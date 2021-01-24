@@ -67,7 +67,7 @@
       ]
   },
   "multiValueQueryStringParameters": null,
-  "path": "/blacklist/",
+  "rawPath": "/blacklist",
   "pathParameters": null,
   "queryStringParameters": {"bot_key": "88888888:TEST"},
   "requestContext": {
