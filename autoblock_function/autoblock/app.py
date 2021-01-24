@@ -82,7 +82,7 @@ def lambda_handler(event, context):
             user_id = body['message']['new_chat_participant']['id']
             username = body['message']['new_chat_participant'].get('username', 'no_username')
 
-            handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username)
+            handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username, message_id)
         elif chat_type == 'private' and 'text' in body['message'] and 'entities' in body['message']:
             text = body['message']['text']
             entities = body['message']['entities']
@@ -95,7 +95,7 @@ def lambda_handler(event, context):
     }
 
 
-def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username):
+def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, username, message_id):
     bot_id = bot_key.split(':')[0]
 
     if str(user_id) == bot_id and chat_type == 'supergroup':
@@ -116,9 +116,19 @@ def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, u
             'user_id': user_id
         }
 
-        requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(bot_key), data=payload).raise_for_status()
+        response = requests.post('https://api.telegram.org/bot{}/kickChatMember'.format(bot_key), data=payload)
 
-        publish_count_metric('UserRemoved')
+        if response.status_code == 200:
+            publish_count_metric('UserRemoved')
+        elif response.status_code == 400:
+            payload = {
+                'chat_id': chat_id,
+                'reply_to_message_id': message_id,
+                'text': 'Unable to remove @{} because this bot is not an admin'.format(username)
+            }
+            requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
+        else:
+            response.raise_for_status()
 
 
 def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entities):
