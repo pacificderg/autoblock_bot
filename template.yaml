@@ -264,7 +264,6 @@ Resources:
               MetricName: Count
             Period: 300
             Stat: Sum
-            Unit: Count
 
   DynamoDBReadCapacityAlarm:
     Type: AWS::CloudWatch::Alarm
