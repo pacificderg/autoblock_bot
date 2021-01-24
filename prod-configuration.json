@@ -1,6 +1,6 @@
 {
   "Parameters": {
-    "Stage": "beta"
+    "Stage": "prod"
   },
   "Tags": {},
   "StackPolicy": {

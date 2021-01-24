@@ -5,11 +5,18 @@ Description: >
 
   Telegram bot that implements a blacklist and a whitelist
 
+Parameters:
+  Stage:
+    Type: String
+    Description: The pipeline stage for this stack
+    Default: 'beta'
+
 Resources:
   RolesTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
+      TableName: !Sub "autoblock-bot-${Stage}-roles"
       AttributeDefinitions:
         - AttributeName: "pk"
           AttributeType: "S"
@@ -59,7 +66,7 @@ Resources:
         Status: Enabled
 
   AutoBlockFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: autoblock_function/
       Handler: autoblock.app.lambda_handler
@@ -81,23 +88,19 @@ Resources:
         - AmazonSSMReadOnlyAccess
       Environment:
         Variables:
+          STAGE: !Ref Stage
           ROLE_TABLE_NAME: !Ref RolesTable
           ROLE_USERS_INDEX: role_users
           OUTPUT_BUCKET_NAME: !Ref ScraperOutputBucket
           APP_CONFIG_PATH: '/autoblock_bot'
       Events:
-        WebHook:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /webhook
-            Method: post
         Whitelist:
-          Type: Api
+          Type: HttpApi
           Properties:
             Path: /whitelist
             Method: post
         Blacklist:
-          Type: Api
+          Type: HttpApi
           Properties:
             Path: /blacklist
             Method: post
@@ -118,6 +121,7 @@ Resources:
         - CloudWatchPutMetricPolicy: {}
       Environment:
         Variables:
+          STAGE: !Ref Stage
           ROLE_TABLE_NAME: !Ref RolesTable
           ROLE_USERS_INDEX: role_users
           OUTPUT_BUCKET_NAME: !Ref ScraperOutputBucket

@@ -26,6 +26,10 @@ Resources:
         IgnorePublicAcls: true
         BlockPublicPolicy: true
         RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
 
   ArtifactStoreBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -34,14 +38,6 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: DenyUnEncryptedObjectUploads
-            Effect: Deny
-            Principal: '*'
-            Action: s3:PutObject
-            Resource: !Sub '${ArtifactStoreBucket.Arn}/*'
-            Condition:
-              'Null':
-                's3:x-amz-server-side-encryption': true
           - Sid: DenyInsecureConnections
             Effect: Deny
             Principal: '*'
@@ -118,13 +114,41 @@ Resources:
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: autoblock-bot
+                StackName: autoblock-bot-beta
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
-                RoleArn: !GetAtt BetaDeployRole.Arn
+                RoleArn: !GetAtt DeployRole.Arn
                 TemplatePath: BuildOutput::packaged.yaml
                 TemplateConfiguration: BuildOutput::beta-configuration.json
               OutputArtifacts: []
               RunOrder: 3
+            - Name: BetaApproval
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: 1
+                Provider: Manual
+              InputArtifacts: []
+              OutputArtifacts: []
+              RunOrder: 4
+        - Name: Prod
+          Actions:
+            - Name: BetaDeploy
+              InputArtifacts:
+                - Name: BuildOutput
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: autoblock-bot-prod
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt DeployRole.Arn
+                TemplatePath: BuildOutput::packaged.yaml
+                TemplateConfiguration: BuildOutput::prod-configuration.json
+              OutputArtifacts: []
+              RunOrder: 5
 
   CodeBuild:
     Type: AWS::CodeBuild::Project
@@ -143,7 +167,7 @@ Resources:
       Source:
         Type: CODEPIPELINE
 
-  BetaDeployRole:
+  DeployRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
