@@ -257,8 +257,10 @@ Resources:
             Metric:
               Namespace: AWS/ApiGateway
               Dimensions:
-                - Name: ApiName
-                  Value: autoblock-bot
+                - Name: ApiId
+                  Value: !Ref ServerlessHttpApi
+                - Name: Stage
+                  Value: !Ref ServerlessHttpApi.Stage
               MetricName: Count
             Period: 300
             Stat: Sum
