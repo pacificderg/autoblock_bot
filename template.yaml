@@ -136,7 +136,7 @@ Resources:
     Type: AWS::SNS::Topic
     DeletionPolicy: Retain
     Properties:
-      DisplayName: autoblock-bot-pager
+      DisplayName: !Sub "autoblock-bot-${Stage}-pager"
       KmsMasterKeyId: alias/aws/sns
 
   AutoBlockErrorAlarm:
