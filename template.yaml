@@ -64,6 +64,14 @@ Resources:
               SSEAlgorithm: AES256
       VersioningConfiguration:
         Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: AutoArchive
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+            Transitions:
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 30
 
   AutoBlockFunction:
     Type: AWS::Serverless::Function

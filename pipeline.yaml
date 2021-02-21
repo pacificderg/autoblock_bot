@@ -30,6 +30,14 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: AutoArchive
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+            Transitions:
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 30
 
   ArtifactStoreBucketPolicy:
     Type: AWS::S3::BucketPolicy
