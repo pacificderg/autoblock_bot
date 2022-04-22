@@ -55,20 +55,6 @@ Resources:
               Bool:
                 'aws:SecureTransport': false
 
-  AppPipelineWebhook:
-    Type: AWS::CodePipeline::Webhook
-    Properties:
-      Authentication: GITHUB_HMAC
-      AuthenticationConfiguration:
-        SecretToken: '{{resolve:secretsmanager:AutoblockBotGitHubSecret:SecretString:token}}'
-      Filters:
-        - JsonPath: $.ref
-          MatchEquals: 'refs/heads/{Branch}'
-      TargetPipeline: !Ref AppPipeline
-      TargetAction: SourceAction
-      TargetPipelineVersion: !GetAtt AppPipeline.Version
-      RegisterWithThirdParty: true
-
   AppPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -83,17 +69,16 @@ Resources:
             - Name: SourceAction
               ActionTypeId:
                 Category: Source
-                Owner: ThirdParty
+                Owner: AWS
                 Version: 1
-                Provider: GitHub
+                Provider: CodeStarSourceConnection
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
-                Owner: !Ref GitHubOwner
-                Repo: !Ref RepositoryName
-                Branch: !Ref BranchName
-                OAuthToken: '{{resolve:secretsmanager:AutoblockBotGitHubSecret:SecretString:token}}'
-                PollForSourceChanges: false
+                BranchName: !Ref BranchName
+                ConnectionArn: arn:aws:codestar-connections:us-west-2:229574508678:connection/4df8ead1-37dc-450c-af05-edc46c1baf5a
+                FullRepositoryId: !Sub '${GitHubOwner}/${RepositoryName}'
+                OutputArtifactFormat: CODE_ZIP
               RunOrder: 1
         - Name: Build
           Actions:
@@ -244,12 +229,23 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - codestar-connections:UseConnection
+                Resource:
+                  - arn:aws:codestar-connections:us-west-2:229574508678:connection/4df8ead1-37dc-450c-af05-edc46c1baf5a
+              - Effect: Allow
+                Action:
                   - s3:GetObject
                   - s3:GetObjectVersion
                   - s3:GetBucketVersioning
                   - s3:PutObject
                 Resource:
                   - !GetAtt ArtifactStoreBucket.Arn
+                  - !Sub '${ArtifactStoreBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObjectAcl
+                  - s3:PutObjectVersionAcl
+                Resource:
                   - !Sub '${ArtifactStoreBucket.Arn}/*'
               - Effect: Allow
                 Action:
