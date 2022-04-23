@@ -108,7 +108,12 @@ def broken_ssm_configuration():
 @pytest.fixture()
 def added_user_response():
     return {
-        'Item': {'pk': {'S': 'user_999999402'}, 'sk': {'S': 'role_blacklist'}, 'username': {'S': '@testuser'}},
+        'Item': {
+            'pk': {'S': 'user_999999402'},
+            'sk': {'S': 'role_blacklist'},
+            'username': {'S': '@testuser'},
+            'reason': {'S': 'test account'}
+        },
     }
 
 
@@ -313,7 +318,7 @@ def test_command(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': f'@test_user ({TEST_USER_ID}) is banned: No reason given'
+            'text': f'@test_user ({TEST_USER_ID}) is banned: test account'
         }
     )
 
@@ -438,7 +443,7 @@ def test_add_command_added_user(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) is already added: No reason given'.format(TEST_USER_ID)
+            'text': '@test_user ({}) is already added: test account'.format(TEST_USER_ID)
         }
     )
 

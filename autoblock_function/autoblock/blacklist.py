@@ -43,7 +43,7 @@ class Handler:
         )
 
         if 'Item' in response:
-            reason = response['Item'].get('reason', {}).get('reason')
+            reason = response['Item'].get('reason', {}).get('S')
             return reason if reason else 'No reason given'
 
         return False
