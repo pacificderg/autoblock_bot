@@ -313,7 +313,7 @@ def test_command(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) is banned'.format(TEST_USER_ID)
+            'text': f'@test_user ({TEST_USER_ID}) is banned: No reason given'
         }
     )
 
@@ -363,6 +363,7 @@ def test_add_command(
             'role_users_pk': {'S': 'role_blacklist'},
             'role_users_sk': {'S': 'user_{}'.format(TEST_USER_ID)},
             'username': {'S': '@test_user'},
+            'reason': {'S': 'test ban'}
         }
     )
     requests.post.assert_called_once_with(
@@ -370,7 +371,7 @@ def test_add_command(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) has been added'.format(TEST_USER_ID)
+            'text': f'@test_user ({TEST_USER_ID}) has been added: test ban'
         }
     )
 
@@ -408,7 +409,7 @@ def test_add_whitelist_command(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) has been added'.format(TEST_USER_ID)
+            'text': '@test_user ({}) has been added: No reason given'.format(TEST_USER_ID)
         }
     )
 
@@ -437,7 +438,7 @@ def test_add_command_added_user(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) is already added'.format(TEST_USER_ID)
+            'text': '@test_user ({}) is already added: No reason given'.format(TEST_USER_ID)
         }
     )
 

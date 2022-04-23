@@ -23,9 +23,9 @@ class Handler:
             }
         )
 
-        return 'Item' in response
+        return 'Allowed' if 'Item' in response else False
 
-    def add_role_to(self, user_id, username):
+    def add_role_to(self, user_id, username, reason):
         self.dynamodb.put_item(
             TableName=self.table_name,
             Item={

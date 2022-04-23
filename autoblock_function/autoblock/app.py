@@ -200,7 +200,8 @@ def handle_command(handler, bot_key, chat_id, from_id, message_id, text, entitie
                 publish_count_metric('NonAdminCommandIgnored')
                 return
 
-            handle_add_user_command(handler, bot_key, chat_id, message_id, username)
+            reason = text[mention_entity['offset'] + mention_entity['length']:].strip()
+            handle_add_user_command(handler, bot_key, chat_id, message_id, username, reason)
         elif command == '/remove':
             # Check that the user who issued the command is an admin
             if not is_user_admin(from_id):
@@ -235,11 +236,13 @@ def handle_is_user_banned_command(handler, bot_key, chat_id, message_id, usernam
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
-    if handler.is_user_banned(info.id):
+    reason = handler.is_user_banned(info.id)
+
+    if reason:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
-            'text': '{} ({}) is banned'.format(username, info.id)
+            'text': f'{username} ({info.id}) is banned: {reason}'
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
     else:
@@ -253,7 +256,7 @@ def handle_is_user_banned_command(handler, bot_key, chat_id, message_id, usernam
     publish_count_metric('IsBannedCommand')
 
 
-def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
+def handle_add_user_command(handler, bot_key, chat_id, message_id, username, reason):
     if clients.get(bot_key) is None:
         load_client(bot_key)
 
@@ -269,22 +272,23 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username):
         return
 
     # Check to see if user is already banned
-    if handler.has_role(info.id):
+    current_reason = handler.has_role(info.id)
+    if current_reason:
         payload = {
             'chat_id': chat_id,
             'reply_to_message_id': message_id,
-            'text': '{} ({}) is already added'.format(username, info.id)
+            'text': f'{username} ({info.id}) is already added: {current_reason}'
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
         return
 
-    handler.add_role_to(info.id, username)
+    handler.add_role_to(info.id, username, reason)
 
     # Send a confirmation back
     payload = {
         'chat_id': chat_id,
         'reply_to_message_id': message_id,
-        'text': '{} ({}) has been added'.format(username, info.id)
+        'text': f'{username} ({info.id}) has been added: {reason if reason else "No reason given"}'
     }
     requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 

@@ -27,7 +27,8 @@ def lambda_handler(event, context):
     for page in page_iterator:
         # No separate user ID field, might be worth it to create one instead of doing this.
         usernames.extend(map(
-            lambda item: '{} ({})'.format(item['username']['S'], item['pk']['S'].split('_')[-1]),
+            lambda item: f"{item['username']['S']} ({item['pk']['S'].split('_')[-1]}) "
+                         f"{item.get('reason', {}).get('S')}",
             page['Items']
         ))
 

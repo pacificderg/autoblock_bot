@@ -42,9 +42,13 @@ class Handler:
             }
         )
 
-        return 'Item' in response
+        if 'Item' in response:
+            reason = response['Item'].get('reason', {}).get('reason')
+            return reason if reason else 'No reason given'
 
-    def add_role_to(self, user_id, username):
+        return False
+
+    def add_role_to(self, user_id, username, reason):
         self.dynamodb.put_item(
             TableName=self.table_name,
             Item={
@@ -52,7 +56,8 @@ class Handler:
                 'sk': {'S': 'role_{}'.format(self.role_name)},
                 'role_users_pk': {'S': 'role_{}'.format(self.role_name)},
                 'role_users_sk': {'S': 'user_{}'.format(user_id)},
-                'username': {'S': username}
+                'username': {'S': username},
+                'reason': {'S': reason}
             }
         )
 
