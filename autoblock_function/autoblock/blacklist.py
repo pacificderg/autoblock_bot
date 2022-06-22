@@ -44,7 +44,7 @@ class Handler:
 
         if 'Item' in response:
             reason = response['Item'].get('reason', {}).get('S')
-            return reason if reason else 'No reason given'
+            return reason if reason else 'Ban predates listed reasons'
 
         return False
 

@@ -414,7 +414,7 @@ def test_add_whitelist_command(
         data={
             'chat_id': 99999999,
             'reply_to_message_id': 13,
-            'text': '@test_user ({}) has been added: No reason given'.format(TEST_USER_ID)
+            'text': '@test_user ({}) has been added: member'.format(TEST_USER_ID)
         }
     )
 

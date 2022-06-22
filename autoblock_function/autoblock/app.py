@@ -260,6 +260,15 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username, rea
     if clients.get(bot_key) is None:
         load_client(bot_key)
 
+    if not reason:
+        payload = {
+            'chat_id': chat_id,
+            'reply_to_message_id': message_id,
+            'text': 'A reason is required.'
+        }
+        requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
+        return
+
     try:
         info = clients[bot_key].get_entity(username)
     except ValueError as e:
@@ -288,7 +297,7 @@ def handle_add_user_command(handler, bot_key, chat_id, message_id, username, rea
     payload = {
         'chat_id': chat_id,
         'reply_to_message_id': message_id,
-        'text': f'{username} ({info.id}) has been added: {reason if reason else "No reason given"}'
+        'text': f'{username} ({info.id}) has been added: {reason}'
     }
     requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
