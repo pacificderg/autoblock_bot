@@ -181,7 +181,7 @@ def test_start_command_event(start_command_event, mock_setup):
         'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': 99999999,
-            'text': 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and released to the public to help'
+            'text': 'This bot was created and released to the public to help'
                     ' room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and'
                     ' the bot will autoblock any Nazifur on its list of users from your room before any trouble can'
                     ' start.'
@@ -199,8 +199,7 @@ def test_bot_new_chat_event(bot_new_chat_event, mock_setup):
         'https://api.telegram.org/bot{}/sendMessage'.format(BOT_KEY),
         data={
             'chat_id': -1009999992388,
-            'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
-                    ' must be made an admin.'
+            'text': 'In order for this bot to be operational in this chat, it must be made an admin.'
         }
     )
 

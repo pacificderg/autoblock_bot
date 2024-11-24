@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.7
+      python: 3.11
     commands:
       # Install aws-cli and sam to build the project
       - pip install -U -r requirements.txt

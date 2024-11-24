@@ -13,7 +13,7 @@ class Handler:
 
     @property
     def welcome_message(self):
-        return 'Hello from the @FurryPartyOfArtAndLabor. This bot was created and released to the public to help ' \
+        return 'This bot was created and released to the public to help ' \
                'room owners secure their rooms from raids and alt-right recruiters. Simply add to your room and ' \
                'the bot will autoblock any Nazifur on its list of users from your room before any trouble can ' \
                'start.'

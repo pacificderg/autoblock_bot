@@ -73,7 +73,7 @@ Resources:
     Properties:
       CodeUri: autoblock_function/
       Handler: autoblock.app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       MemorySize: 256
       Timeout: 60
       AutoPublishAlias: live
@@ -113,7 +113,7 @@ Resources:
     Properties:
       CodeUri: autoblock_function/
       Handler: autoblock.blocklist_scraper.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       MemorySize: 512
       Timeout: 900
       Policies:

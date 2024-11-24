@@ -102,8 +102,7 @@ def handle_new_user(handler, bot_key, chat_id, chat_type, chat_title, user_id, u
         print('Added to new chat: {} ({})'.format(chat_title, chat_id))
         payload = {
             'chat_id': chat_id,
-            'text': 'Hello from the @FurryPartyOfArtAndLabor. In order for this bot to be operational in this chat, it'
-                    ' must be made an admin.'
+            'text': 'In order for this bot to be operational in this chat, it must be made an admin.'
         }
         requests.post('https://api.telegram.org/bot{}/sendMessage'.format(bot_key), data=payload).raise_for_status()
 
